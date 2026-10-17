@@ -2,6 +2,7 @@
 
 Catálogo de requisitos para abrir o site a toda a comunidade com **segurança, robustez e conformidade**, sem orçamento de infraestrutura.
 Complementa [escala-1000-usuarios.md](escala-1000-usuarios.md) (carga, arquitetura e fases).
+O backlog executável (uma issue por requisito, com tarefas, ordem e marcos) está no [roteiro #80](https://github.com/MGabrielaZuppardo/dse-academy/issues/80).
 
 **Como ler**
 
@@ -20,7 +21,7 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 |---|---|---|---|---|---|---|
 | SEG-01 | O site deve enviar cabeçalhos de segurança (`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`/`frame-ancestors`) | CRIAR | P0 | a home só devolve `Strict-Transport-Security` | scanner de cabeçalhos com nota A; teste automatizado no CI | pendente |
 | SEG-02 | O site deve ter Content-Security-Policy (iniciar em modo `Report-Only`, depois impor) | CRIAR | P1 | não há CSP; o script de tema é inline e precisa de nonce | CSP imposta sem erros no console nas telas principais | pendente |
-| SEG-03 | Formulários públicos (artigo, palestrante, relato) devem resistir a abuso: limite por pessoa, teto de envios anônimos, limite por IP no proxy e desafio anti-robô aberto | CRIAR | P0 | qualquer pessoa insere; sem limite | 21º envio anônimo na hora é recusado; teste de abuso no k6 passa | migration 009 validada em Postgres local, **falta aplicar**; IP/anti-robô pendentes |
+| SEG-03 | Os formulários (artigo, palestrante e relato) devem **exigir login** e ter limite de envios por pessoa | CRIAR | P0 | hoje qualquer pessoa, logada ou não, insere sem limite | visitante vê o login em vez do formulário; o banco recusa `anon`; o 6º artigo em 24 h da mesma pessoa é recusado; teste de abuso no k6 passa | migration 009 validada em Postgres local (**falta aplicar**, depois de publicar a tela com login); tela com login pendente |
 | SEG-04 | O login deve ter proteção contra abuso: limites do Supabase Auth revisados, confirmação de e-mail, Redirect URLs sem curingas desnecessários, app do Google publicado | APERFEIÇOAR | P0 | confirmação ligada; app do Google em modo teste | tentativa de 20 logins/min é limitada; só URLs da lista funcionam | parcial |
 | SEG-05 | Segredos expostos devem ser rotacionados e haver política de rotação | CORRIGIR | P0 | token do Apps Script e outros apareceram em conversa | tokens novos em uso; antigos revogados; procedimento documentado | pendente |
 | SEG-06 | Contas de admin devem ter MFA e toda ação administrativa deve ser registrada (quem, o quê, quando) | CRIAR | P1 | admin só por e-mail/Google; sem trilha de auditoria | TOTP obrigatório para `/admin`; tabela `auditoria_admin` preenchida por trigger | pendente |

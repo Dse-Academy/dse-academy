@@ -11,6 +11,11 @@ updates:
     commit-message: { prefix: "chore(deps)" }
     groups:
       menores-e-correcoes: { update-types: ["minor", "patch"] }
+    ignore:
+      # O typescript-eslint (que o lint usa) aceita TypeScript "<6.1.0". O TypeScript 7 passa no typecheck e no build, mas
+      # derruba o lint ("typescript-eslint does not support TS 7.0"). Reavaliar quando houver uma versão dele com suporte.
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
 
   - package-ecosystem: "pip"
     directory: "/"

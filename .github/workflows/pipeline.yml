@@ -58,7 +58,7 @@ jobs:
         run: python -m ingestion.gupy --minimo 200
 
       - name: Guardar o JSON bruto da coleta (90 dias)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coleta-gupy-${{ github.run_id }}
           path: data/raw/

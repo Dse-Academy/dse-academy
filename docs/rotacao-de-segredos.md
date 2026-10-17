@@ -12,6 +12,7 @@ Procedimento do requisito **SEG-05** (issue #32). Vale para todo segredo da DSE 
 | `TOKEN` do webhook | Propriedade do script no Apps Script **e** na URL gravada na função `notificar_apps_script` do Supabase | quem administra o Apps Script e o Supabase | prova ao script que o aviso veio do Supabase | 6 meses, ou ao vazar |
 | `GROQ_API_KEY` | `.env` local (ignorado pelo git) e Secret `GROQ_API_KEY` do GitHub Actions | quem gera as trilhas; GitHub Actions | organizar as trilhas com modelo aberto | 6 meses, ou ao vazar |
 | Client Secret do Google OAuth | Supabase (Authentication, Providers, Google) | quem administra o Supabase e o Google Cloud | login com Google | 12 meses, ou ao vazar |
+| `DEPLOY_KEY` (chave SSH de deploy) | Secret do GitHub Actions; a pública fica em *Settings > Deploy keys* do repositório | só o workflow | o job `dados-do-site-novo` grava na `main` protegida (SEG-09) | 12 meses, ou ao vazar |
 | `BACKUP_PASSPHRASE` | Secret do GitHub Actions e cofre da equipe (SEG-10) | 2 pessoas da organização | abrir os backups cifrados | 12 meses, ou ao vazar |
 | Chave **publishable** do Supabase | variáveis da Vercel e `.env.local` | pública por design | chamadas do site ao banco | só se o projeto trocar de chave |
 | Sessão do GitHub CLI (`gh auth`) | máquina de quem desenvolve | cada pessoa | automação local | revogar se a máquina for perdida |
@@ -25,6 +26,7 @@ Registre abaixo a data de cada rotação (quem fez e quando):
 | `TOKEN` do webhook | pendente | |
 | `GROQ_API_KEY` | pendente | |
 | Client Secret do Google | pendente | |
+| `DEPLOY_KEY` | ainda não existe (SEG-09) | |
 | `BACKUP_PASSPHRASE` | ainda não existe (SEG-10) | |
 
 ## 2. Como trocar cada um
@@ -57,7 +59,13 @@ O valor precisa ser **igual nos dois lados**. Se ficar diferente, o script respo
 3. Teste o login com Google em janela anônima.
 4. Só depois, no Google Cloud, **desative** e então **exclua** o secret antigo.
 
-### 2.4 `BACKUP_PASSPHRASE` (quando o backup existir)
+### 2.4 `DEPLOY_KEY`
+1. Gere um par novo (`ssh-keygen -t ed25519 -N "" -f chave`), sem exibir a privada.
+2. Cadastre a **pública** em *Settings > Deploy keys* do repositório, com permissão de escrita, e **remova a antiga**.
+3. Atualize o Secret `DEPLOY_KEY` com a **privada** e apague o arquivo local (`shred -u chave`).
+4. Teste disparando o workflow *Coleta e publicação*: o job de dados deve conseguir gravar na `main`.
+
+### 2.5 `BACKUP_PASSPHRASE` (quando o backup existir)
 1. Gere uma passphrase nova e guarde no cofre da equipe.
 2. Atualize o Secret do GitHub.
 3. **Os backups antigos continuam exigindo a passphrase antiga**: guarde-a pelo tempo de retenção dos backups.

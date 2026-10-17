@@ -108,7 +108,7 @@ carregado em segundo plano depois que a página aparece: a abertura baixa só `d
 **Requisitos:** Python 3.13 e Git.
 
 ```bash
-git clone git@github.com:MGabrielaZuppardo/dse-academy.git
+git clone git@github.com:Dse-Academy/dse-academy.git
 cd dse-academy
 
 python -m venv .venv

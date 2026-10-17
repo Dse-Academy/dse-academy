@@ -11,6 +11,10 @@
 # e commita no main: a Vercel publica sozinha a cada commit. Opcional: o segredo GROQ_API_KEY (Settings > Secrets > Actions)
 # faz o modelo aberto organizar as trilhas; sem ele, as trilhas saem por regras.
 #
+# Proteção da main: quando a main exige PR e checks verdes, o commit de dados precisa de uma identidade com bypass.
+# O job usa a chave de deploy do secret DEPLOY_KEY (permitida como bypass na regra da main). Sem o secret, o checkout
+# cai no GITHUB_TOKEN, que só consegue gravar enquanto a main NÃO exige PR.
+#
 # Se a coleta vier suspeita (poucas vagas) ou os testes falharem, nada é publicado:
 # o site anterior continua no ar e o GitHub avisa por e-mail.
 
@@ -90,6 +94,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Vazio (secret ausente) = usa o GITHUB_TOKEN. Com a chave, o push vai por SSH e passa pela exceção da regra da main.
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - uses: actions/setup-python@v5
         with:

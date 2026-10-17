@@ -13,8 +13,10 @@ test("os cabeçalhos de segurança obrigatórios existem (SEG-01)", () => {
 });
 
 test("a Permissions-Policy desliga os recursos que o site não usa", () => {
+  // Comparação exata de texto (sem regex): "camera=()" significa "nenhuma origem pode usar a câmera".
+  const diretivas = (valor("Permissions-Policy") ?? "").split(",").map((d) => d.trim());
   for (const recurso of ["camera", "microphone", "geolocation", "payment"]) {
-    assert.match(valor("Permissions-Policy") ?? "", new RegExp(`${recurso}=\(\)`), recurso);
+    assert.ok(diretivas.includes(`${recurso}=()`), recurso);
   }
 });
 

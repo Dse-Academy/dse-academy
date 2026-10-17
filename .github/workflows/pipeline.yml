@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
@@ -98,7 +98,7 @@ jobs:
           # Vazio (secret ausente) = usa o GITHUB_TOKEN. Com a chave, o push vai por SSH e passa pela exceção da regra da main.
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip

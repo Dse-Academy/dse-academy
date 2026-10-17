@@ -23,9 +23,9 @@ Registre abaixo a data de cada rotação (quem fez e quando):
 
 | Segredo | Última rotação | Próxima |
 |---|---|---|
-| `TOKEN` do webhook | pendente | |
-| `GROQ_API_KEY` | pendente | |
-| Client Secret do Google | pendente | |
+| `TOKEN` do webhook | mantido por decisão em 17/10/2026 (ver seção 6) | até 17/04/2027 |
+| `GROQ_API_KEY` | mantido por decisão em 17/10/2026 (ver seção 6) | até 17/04/2027 |
+| Client Secret do Google | mantido por decisão em 17/10/2026 (ver seção 6) | até 17/10/2027 |
 | `DEPLOY_KEY` | ainda não existe (SEG-09) | |
 | `BACKUP_PASSPHRASE` | ainda não existe (SEG-10) | |
 
@@ -86,3 +86,15 @@ Ordem importa: **conter, trocar, investigar**.
 
 ## 5. Verificação feita em outubro de 2026
 Varredura de todo o histórico do repositório (97 commits) em busca de chaves da Groq, Client Secret do Google, chaves *secret* e JWT do Supabase, e do token do webhook: **nenhuma ocorrência**. O `.env` não é rastreado (só o `.env.example`). Os valores que apareceram em conversa foram só em conversa; mesmo assim a troca está planejada (SEG-05) por precaução.
+
+## 6. Decisão registrada: manter o token do webhook, a chave da Groq e o Client Secret do Google
+Em 17/10/2026 a liderança decidiu **manter** esses três segredos, sem trocá-los agora. Registro para não parecer esquecimento:
+
+- **O que se sabe:** os valores apareceram em conversas de trabalho durante a construção do projeto. A varredura de todo o histórico do repositório (seção 5) não achou nenhum deles versionado.
+- **Risco aceito:** quem tivesse acesso a essas conversas poderia usar os valores até que sejam trocados.
+  - `TOKEN`: dispararia avisos falsos por e-mail e eventos no Agenda.
+  - `GROQ_API_KEY`: consumiria a cota gratuita.
+  - Client Secret do Google: só é útil junto com o Client ID e o fluxo do Supabase, e o redirecionamento é restrito ao endereço do projeto.
+- **Condições para manter:** os valores continuam fora do repositório, de issues e de PRs; a rotina periódica da seção 3 segue valendo.
+- **Gatilhos que obrigam a trocar na hora:** qualquer sinal de uso indevido (avisos estranhos, uso inesperado da cota, login estranho), saída de alguém que os conhecia, ou os valores aparecerem em algum lugar público. Nesses casos, siga a seção 4.
+- **Reavaliar:** até **17/04/2027** (token e chave da Groq) e **17/10/2027** (Client Secret do Google).

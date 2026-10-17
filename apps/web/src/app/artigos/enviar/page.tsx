@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ExigirLogin } from "@/components/exigir-login";
 import { FormularioArtigo } from "./formulario";
 
 export const metadata: Metadata = {
@@ -14,7 +15,13 @@ export default function Pagina() {
         Tem um texto sobre dados, engenharia ou carreira? Envie o rascunho e a equipe da DSE revisa antes de publicar
         no Medium da comunidade. Seu envio fica salvo e a equipe é avisada por e-mail.
       </p>
-      <FormularioArtigo />
+      <ExigirLogin
+        voltarPara="/artigos/enviar"
+        titulo="Entre para enviar seu artigo"
+        texto="Para evitar spam e poder avisar você sobre a revisão, o envio é só para quem tem conta. Leva alguns segundos."
+      >
+        <FormularioArtigo />
+      </ExigirLogin>
     </>
   );
 }

@@ -1,0 +1,36 @@
+# Análise estática de segurança com CodeQL (requisito SEG-08): procura vulnerabilidades no código de JavaScript/TypeScript
+# (site) e Python (coleta, trilhas, API). Os alertas aparecem em Security > Code scanning.
+# Não é um check obrigatório da main: um alerta novo vira trabalho a priorizar, não trava todos os PRs.
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 4 * * 2" # terça, 04:23 UTC: pega vulnerabilidades novas descobertas depois do último commit
+
+permissions:
+  contents: read
+
+jobs:
+  analisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

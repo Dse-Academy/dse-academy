@@ -1,17 +1,12 @@
 # Testes do monorepo novo (apps/web e apps/api). Independente do workflow que publica o site atual.
 name: CI
 
+# Roda em TODO pull request, sem filtro de pasta: a regra da main exige os checks api, web e apps-script, e um PR que
+# só mexe em documentos ficaria esperando para sempre por checks que nunca rodariam.
 on:
   pull_request:
-    paths:
-      - "apps/**"
-      - "supabase/**"
-      - "integrations/**"
-      - ".github/workflows/ci.yml"
   push:
     branches: [main]
-    paths:
-      - "apps/**"
 
 permissions:
   contents: read

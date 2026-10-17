@@ -1,0 +1,49 @@
+# Impede que o banco do Supabase (plano gratuito) seja pausado por inatividade (requisito DISP-01).
+#
+# O plano gratuito pausa o projeto depois de cerca de uma semana sem uso. Este workflow faz uma consulta simples ao banco
+# todos os dias, o que conta como atividade. Se a consulta falhar (inclusive se o projeto já estiver pausado), o job falha
+# e o GitHub avisa por e-mail quem tem notificações de Actions ligadas.
+#
+# Configuração (Settings > Secrets and variables > Actions > Variables):
+#   SUPABASE_URL        https://<projeto>.supabase.co
+#   SUPABASE_ANON_KEY   chave publishable (pública por design; nunca use a chave secret/service_role)
+#
+# Se o projeto já estiver pausado: Supabase > o projeto > Restore project. Depois rode este workflow na aba Actions.
+# Observação: o GitHub desativa workflows agendados em repositórios sem nenhuma atividade por 60 dias; o commit semanal
+# de dados do workflow "Coleta e publicação" mantém o repositório ativo.
+
+name: Anti-pausa do banco
+
+on:
+  schedule:
+    - cron: "17 9 * * *" # todo dia, 09:17 UTC (06:17 em Brasília)
+  workflow_dispatch: # botão "Run workflow" para testar
+
+permissions:
+  contents: read
+
+jobs:
+  consulta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consulta simples ao banco
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::Variáveis SUPABASE_URL e SUPABASE_ANON_KEY não estão configuradas no repositório."
+            exit 1
+          fi
+          # View pública (só cadastros aprovados, sem e-mail): lê o banco de verdade, sem expor nada sensível.
+          codigo=$(curl -sS -o /dev/null -w "%{http_code}" --retry 3 --retry-delay 10 --max-time 30 \
+            -H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/palestrantes_publicos?select=id&limit=1")
+          echo "Resposta do banco: HTTP ${codigo}"
+          if [ "${codigo}" != "200" ]; then
+            echo "::error::O banco não respondeu 200 (recebeu ${codigo}). Se o projeto estiver pausado, restaure no painel do Supabase."
+            exit 1
+          fi
+          echo "Banco ativo."

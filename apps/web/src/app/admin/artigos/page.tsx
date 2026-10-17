@@ -8,10 +8,10 @@ import { Carregando, Erro, SELECT } from "../ui";
 type Artigo = {
   id: string; nome: string; email: string; titulo: string; resumo: string; tags: string[]; idioma: string;
   link_rascunho: string; perfil_medium: string | null; linkedin: string | null; data_desejada: string | null;
-  status: string; criado_em: string;
+  status: string; criado_em: string; versao_politica: string | null;
 };
 
-const COLUNAS = "id,nome,email,titulo,resumo,tags,idioma,link_rascunho,perfil_medium,linkedin,data_desejada,status,criado_em";
+const COLUNAS = "id,nome,email,titulo,resumo,tags,idioma,link_rascunho,perfil_medium,linkedin,data_desejada,status,criado_em,versao_politica";
 
 export default function ArtigosAdmin() {
   const [itens, setItens] = useState<Artigo[] | null>(null);
@@ -73,7 +73,7 @@ export default function ArtigosAdmin() {
               </div>
               <p className="mt-2 text-tinta">{a.resumo}</p>
               <p className="mt-2 text-sm text-suave">
-                Tags: {a.tags.join(", ")}{a.data_desejada ? ` · publicar em ${new Date(a.data_desejada + "T12:00:00").toLocaleDateString("pt-BR")}` : ""}
+                Política de privacidade aceita: {a.versao_politica ?? "anterior ao registro de versão"} · Tags: {a.tags.join(", ")}{a.data_desejada ? ` · publicar em ${new Date(a.data_desejada + "T12:00:00").toLocaleDateString("pt-BR")}` : ""}
               </p>
               <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <a href={a.link_rascunho} target="_blank" rel="noopener noreferrer" className="text-link underline">Abrir rascunho</a>

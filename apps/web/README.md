@@ -26,6 +26,7 @@ npm run typecheck && npm run lint && npm test && npm run build
 | `/vagas` | lista com busca e filtros; logada, mostra a **aderência** de cada vaga ao perfil, ordena pelas mais aderentes e permite salvar |
 | `/vagas/[id]` | detalhe da vaga (uma página estática por vaga): aderência ao perfil, **o que falta com link para a etapa certa da trilha**, salvar e "algo errado nesta vaga?" |
 | `/trilhas`, `/trilhas/[id]` | trilhas por área, do básico ao avançado, com 5 ideias de mini-projeto por etapa e conteúdo gratuito; logada, a pessoa se inscreve e marca o progresso |
+| `/competencias` | **perfil de competências**: as tecnologias mais pedidas nas vagas abertas por função e nível, com o % das vagas que as citam; a escolha fica na URL (compartilhável); logada, mostra o que falta no perfil e leva à etapa certa da trilha |
 | `/perfil` | login por link no e-mail, edição do perfil (área, nível, habilidades) e vagas salvas |
 | `/boas-vindas` | onboarding de 3 passos (área, nível, habilidades); abre sozinho no primeiro acesso |
 | `/artigos/enviar` | formulário de artigos para o Medium |

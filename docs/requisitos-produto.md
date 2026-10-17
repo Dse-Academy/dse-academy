@@ -2,7 +2,7 @@
 
 Catálogo de requisitos para abrir o site a toda a comunidade com **segurança, robustez e conformidade**, sem orçamento de infraestrutura.
 Complementa [escala-1000-usuarios.md](escala-1000-usuarios.md) (carga, arquitetura e fases).
-O backlog executável (uma issue por requisito, com tarefas, ordem e marcos) está no [roteiro #80](https://github.com/MGabrielaZuppardo/dse-academy/issues/80).
+O backlog executável (uma issue por requisito, com tarefas, ordem e marcos) está no [roteiro #80](https://github.com/Dse-Academy/dse-academy/issues/80).
 
 **Como ler**
 

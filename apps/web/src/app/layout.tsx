@@ -59,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
               <Link href="/#sobre-nos" className="text-link underline">Sobre nós</Link>
               <Link href="/contato" className="text-link underline">Fale conosco</Link>
+              <Link href="/privacidade" className="text-link underline">Privacidade</Link>
               <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" className="text-link underline">DSE Community no LinkedIn</a>
               <a href={LINKTREE_URL} target="_blank" rel="noopener noreferrer" className="text-link underline">Linktree</a>
             </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { supabaseNoNavegador } from "@/lib/supabase/client";
 import { estiloBotao } from "@/lib/botoes";
@@ -82,6 +83,9 @@ export function Entrar({ titulo = "Criar meu perfil", texto, voltarPara = "/perf
           {erro && <p role="alert" className="font-medium text-erro">{erro}</p>}
           <button type="submit" disabled={fase === "enviando"} className={estiloBotao("primario")}>{fase === "enviando" ? "Enviando…" : "Receber link de acesso"}</button>
         </form>
+          <p className="text-xs text-suave">
+            Ao entrar, você concorda com o tratamento dos seus dados conforme a <Link href="/privacidade" className="text-link underline">Política de Privacidade</Link>.
+          </p>
         </div>
       )}
     </>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { IDIOMAS_ARTIGO, MAX_TAGS, paraLinha, validar, type EnvioArtigo } from "@/lib/artigos";
 import { mensagemDeErroDeEnvio } from "@/lib/envio";
@@ -134,7 +135,7 @@ export function FormularioArtigo() {
         </label>
         <label className="flex items-start gap-2">
           <input type="checkbox" name="aceite_lgpd" className="mt-1" />
-          <span>Concordo que a DSE Academy trate os dados deste formulário para revisar e publicar o artigo. *</span>
+          <span>Concordo que a DSE Academy trate os dados deste formulário para revisar e publicar o artigo, conforme a <Link href="/privacidade" target="_blank" className="text-link underline">Política de Privacidade</Link>. *</span>
         </label>
       </div>
 

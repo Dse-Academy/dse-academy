@@ -43,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <nav aria-label="Principal" className="order-3 flex w-full flex-wrap gap-x-4 gap-y-1 text-sm md:order-2 md:w-auto md:flex-1 md:justify-end">
                 <Link href="/vagas" className="hover:text-azul-claro">Vagas</Link>
                 <Link href="/trilhas" className="hover:text-azul-claro">Trilhas</Link>
+                <Link href="/competencias" className="hover:text-azul-claro">Mercado</Link>
                 <Link href="/perfil" className="hover:text-azul-claro">Meu perfil</Link>
                 <Link href="/artigos/enviar" className="hover:text-azul-claro">Enviar artigo</Link>
                 <Link href="/palestrantes/cadastro" className="hover:text-azul-claro">Seja palestrante</Link>

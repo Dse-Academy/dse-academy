@@ -203,7 +203,7 @@ Fica a publicação aberta mais recente; banco de talentos só representa o grup
   (100%) não fique à frente de uma com "6 de 8" (75%), que diz mais. A constante está em `apps/web/src/lib/aderencia.ts`.
 - **O que falta:** ordenado pelo percentual de vagas da mesma área que citam cada skill.
 
-### Perfil de competências (ainda não portado para o site novo)
+### Perfil de competências (página `/competencias`)
 
 Percentual de vagas abertas (da área e do nível escolhidos) que citam cada skill. Amostras com menos de 20 vagas
 recebem o aviso "amostra pequena".
@@ -416,7 +416,6 @@ Para ampliar o conteúdo basta editar os três YAML (há testes que validam ids,
 - [ ] SMTP próprio para os e-mails de login
 - [ ] Trocar o token do Apps Script (o usado nos testes apareceu em conversa) e apagar os envios de teste
 - [ ] Revisar as trilhas geradas
-- [ ] Portar para o site novo o **perfil de competências** (as skills mais pedidas por área e nível); o código do site antigo está no histórico do Git
 - [ ] Avaliação manual de uma amostra (acurácia de senioridade, precisão e revocação das skills)
 - [ ] Conectores Greenhouse e Lever
 - [ ] Agente conversacional sobre os dados das vagas (adiado)

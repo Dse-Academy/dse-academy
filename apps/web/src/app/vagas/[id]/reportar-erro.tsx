@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { useConta } from "@/lib/conta/contexto";
+import { mensagemDeErroDeEnvio } from "@/lib/envio";
 import { MAX_DETALHE, TIPOS_RELATO, montarRelato, type DadosDaVagaRelatada } from "@/lib/relato";
 import { configurado, supabaseNoNavegador } from "@/lib/supabase/client";
 import { estiloBotao } from "@/lib/botoes";
@@ -19,8 +21,9 @@ function lembrar(id: string): void {
   } catch { /* sem storage */ }
 }
 
-/** "Algo errado nesta vaga?": qualquer pessoa pode enviar, logada ou não (a tabela só aceita inserção). */
+/** "Algo errado nesta vaga?": só quem está logada envia (visitante vê o convite para entrar); a tabela só aceita inserção. */
 export function ReportarErro({ vaga, stacks }: { vaga: DadosDaVagaRelatada; stacks: { id: string; nome: string }[] }) {
+  const conta = useConta();
   const [tipo, setTipo] = useState("");
   const [marcadas, setMarcadas] = useState<string[]>([]);
   const [detalhe, setDetalhe] = useState("");
@@ -30,6 +33,22 @@ export function ReportarErro({ vaga, stacks }: { vaga: DadosDaVagaRelatada; stac
   const anterior = useSyncExternalStore(() => () => {}, () => jaReportou(vaga.id), () => false);
 
   if (!configurado()) return null; // sem Supabase não há para onde enviar
+
+  if (conta.fase !== "logada") {
+    // Visitante (ou conta ainda carregando): só o convite, sem o formulário.
+    return (
+      <section className="mt-10 rounded-2xl border border-borda bg-superficie p-5">
+        <h2 className="font-display text-lg font-semibold text-titulo">Algo errado nesta vaga?</h2>
+        {conta.fase === "visitante" ? (
+          <p className="mt-1 text-suave">
+            <Link href="/perfil" className="text-link underline">Entre</Link> para avisar a equipe sobre um problema nesta vaga. Assim evitamos spam e podemos agradecer a ajuda.
+          </p>
+        ) : (
+          <p role="status" className="mt-1 text-suave">Carregando…</p>
+        )}
+      </section>
+    );
+  }
 
   if (anterior || fase === "enviado") {
     return (
@@ -47,7 +66,7 @@ export function ReportarErro({ vaga, stacks }: { vaga: DadosDaVagaRelatada; stac
     setErro(null);
     setFase("enviando");
     const { error } = await supabaseNoNavegador().from("reportes_vaga").insert(r.linha);
-    if (error) { console.error(error); setErro("Não foi possível enviar agora. Tente de novo em instantes."); setFase("preenchendo"); return; }
+    if (error) { console.error(error); setErro(mensagemDeErroDeEnvio(error)); setFase("preenchendo"); return; }
     lembrar(vaga.id);
     setFase("enviado");
   }

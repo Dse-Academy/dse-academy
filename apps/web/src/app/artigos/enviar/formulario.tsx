@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { IDIOMAS_ARTIGO, MAX_TAGS, paraLinha, validar, type EnvioArtigo } from "@/lib/artigos";
+import { mensagemDeErroDeEnvio } from "@/lib/envio";
 import { configurado, supabaseNoNavegador } from "@/lib/supabase/client";
 import { estiloBotao } from "@/lib/botoes";
 
@@ -52,11 +53,11 @@ export function FormularioArtigo() {
 
     setErro(null);
     setEstado("enviando");
-    // Sem .select(): a tabela não é legível por visitantes anônimos, só o envio é permitido.
+    // Sem .select(): o formulário só insere; a leitura é da própria pessoa (e do admin) pelas políticas do banco.
     const { error } = await supabaseNoNavegador().from("submissoes_artigos").insert(paraLinha(envio));
     if (error) {
       console.error(error);
-      setErro("Não foi possível enviar agora. Tente de novo em instantes.");
+      setErro(mensagemDeErroDeEnvio(error));
       setEstado("preenchendo");
       return;
     }

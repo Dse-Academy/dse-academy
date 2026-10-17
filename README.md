@@ -475,4 +475,8 @@ Para ampliar o conteúdo basta editar os três YAML (há testes que validam ids,
 - [ ] Conectores Greenhouse e Lever
 - [ ] Agente conversacional sobre os dados das vagas (adiado)
 
-**Licença:** ainda não definida.
+## Licença
+
+O **código** deste repositório é distribuído sob a [Licença MIT](LICENSE). Veja também [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) e o [Código de conduta](CODE_OF_CONDUCT.md).
+
+**Não estão cobertos pela licença:** as fotos da equipe e dos eventos (`apps/web/public/equipe`, `apps/web/public/galeria`), o logo e a identidade visual da DSE Academy. Todos os direitos reservados aos respectivos autores e à DSE; não os reutilize sem autorização.

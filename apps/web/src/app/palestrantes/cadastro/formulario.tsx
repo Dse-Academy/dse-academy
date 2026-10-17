@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { mensagemDeErroDeEnvio } from "@/lib/envio";
 import { configurado, supabaseNoNavegador } from "@/lib/supabase/client";
@@ -129,7 +130,7 @@ export function FormularioPalestrante() {
       <div className="space-y-2 border-t border-borda pt-4">
         <label className="flex items-start gap-2">
           <input type="checkbox" name="aceite_lgpd" className="mt-1" />
-          <span>Concordo que a DSE Academy trate os dados deste formulário para avaliar e organizar meu convite como palestrante. *</span>
+          <span>Concordo que a DSE Academy trate os dados deste formulário para avaliar e organizar meu convite como palestrante, conforme a <Link href="/privacidade" target="_blank" className="text-link underline">Política de Privacidade</Link>. *</span>
         </label>
         <label className="flex items-start gap-2">
           <input type="checkbox" name="aceite_publicacao" className="mt-1" />

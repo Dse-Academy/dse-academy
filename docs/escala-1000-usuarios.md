@@ -1,7 +1,7 @@
 # Escalar a DSE Academy para mais de 1.000 pessoas (100% open-source)
 
 Documento de requisitos e arquitetura-alvo. Escrito depois da aprovação da POC (piloto de ~20 pessoas).
-Status: **proposta para decisão do time**. Nada aqui foi implementado ainda, exceto onde indicado.
+Status: **proposta para decisão do time**. A execução acontece pelo backlog de produtização (roteiro #80); vários itens da fase 1 já foram feitos: proteção da `main`, login nos formulários, migration 009, cabeçalhos de segurança, anti-pausa, monitor, `/api/health`, páginas de erro, Dependabot e CodeQL.
 
 ---
 
@@ -99,7 +99,7 @@ Ordenado por probabilidade de causar queda **antes** de 1.000 pessoas.
 | 3 | **Cota do Apps Script** | `MailApp` em conta Gmail comum ≈ 100 e-mails/dia; webhook síncrono e uma execução por envio | Média |
 | 4 | **Hospedagem do front em plano pessoal** | plano gratuito da Vercel é para uso não comercial e tem limites de banda e funções | Média |
 | 5 | **Sem monitoramento nem alertas** | hoje só sabemos que caiu se alguém avisar | Alta |
-| 6 | **Sem rate limit** | formulários públicos aceitam inserção anônima (artigos, palestrantes, relatos); abuso enche o banco | Alta |
+| 6 | **Sem limite nos formulários** | qualquer pessoa, logada ou não, inseria artigos, palestrantes e relatos; abuso enchia o banco | Alta (**resolvido**: login obrigatório + limite por pessoa, migration 009) |
 | 7 | **Políticas RLS sem otimização** | `auth.uid()` chamado por linha em vez de `(select auth.uid())`; `submissoes_artigos` e `palestrantes` filtram por `user_id` sem índice | Média (cresce com os dados) |
 | 8 | **Várias chamadas por carga de página** | provider de conta faz sessão + perfil + salvas, mais `is_admin` no menu | Baixa hoje; vira custo com a escala |
 | 9 | **Ponto único de falha** | um banco, um front, um script | Média |
@@ -115,7 +115,7 @@ Objetivo: parar de depender de sorte. Custo baixo, risco baixo.
 
 1. **Banco sem pausa e com backup real:** plano pago do Supabase **ou** já subir o Postgres próprio (ver fase 2). Agendar `pg_dump` diário para armazenamento S3-compatível e **testar a restauração**.
 2. **E-mail de login:** SMTP próprio configurado no Supabase (relay com boa reputação; ver seção 9) e login com Google como caminho principal (já implementado).
-3. **Rate limit** nos formulários públicos: limite por IP no proxy e por conta no banco (função de inserção com contagem, ou trigger).
+3. **Formulários só para quem está logada**, com limite por pessoa no banco (migration 009, **aplicada em produção**). Com isso deixam de ser necessários o teto de envios anônimos e o limite por IP nos formulários; o login passa a ser o ponto a proteger (SEG-04).
 4. **RLS otimizada:** trocar `auth.uid()` por `(select auth.uid())` nas políticas; criar índices em `user_id` de `submissoes_artigos` e `palestrantes`.
 5. **Observabilidade mínima:** monitor de disponibilidade externo (Uptime Kuma) em `/`, `/vagas` e `/health` da API, com alerta para o e-mail da equipe.
 6. **Teste de carga** (seção 8) antes de divulgar.

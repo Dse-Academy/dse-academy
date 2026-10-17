@@ -1,12 +1,14 @@
 -- Robustez para escala (1.000+ pessoas): políticas mais rápidas, índices e limite contra abuso nos formulários.
 --
 -- Rode no Supabase: Dashboard > SQL Editor > cole este arquivo > Run. (Depende das migrations 001 a 008.)
--- É seguro rodar de novo: tudo é idempotente. Não muda nenhum comportamento visível para quem usa o site normalmente.
+-- É seguro rodar de novo: tudo é idempotente. ATENÇÃO: muda um comportamento: artigos, palestrantes e relatos passam a exigir
+-- login. Publique antes o site que pede o login (PR "exigir login nos formulários"), senão quem não estiver logada vê erro ao enviar.
 --
 -- 1) Políticas RLS: `auth.uid()` e `is_admin()` passam a ser avaliados UMA vez por consulta, não uma vez por linha
 --    (recomendação oficial do Supabase para RLS: envolver em `(select ...)`). O significado das regras não muda.
 -- 2) Índices em `user_id` (e `criado_em`) das tabelas de envio: sem eles, "dono lê" e os limites abaixo viram varredura completa.
--- 3) Limite de envios nas tabelas abertas a qualquer pessoa (artigos, palestrantes, relatos): impede encher o banco.
+-- 3) Envio só para quem está logada (artigos, palestrantes e relatos) e com limite por pessoa: impede encher o banco.
+--    A partir daqui `anon` NÃO insere mais nessas três tabelas; o site pede login antes de mostrar o formulário.
 
 -- ---------------------------------------------------------------------------
 -- 1) Políticas
@@ -39,23 +41,25 @@ create policy "trilha: dono remove" on public.inscricoes_trilha for delete using
 
 -- reportes_vaga
 drop policy if exists "reportes: qualquer pessoa envia" on public.reportes_vaga;
+drop policy if exists "reportes: pessoa logada envia" on public.reportes_vaga;
 drop policy if exists "reportes: admin lê" on public.reportes_vaga;
-create policy "reportes: qualquer pessoa envia" on public.reportes_vaga
-  for insert to anon, authenticated
-  with check (user_id is not distinct from (select auth.uid()));
+create policy "reportes: pessoa logada envia" on public.reportes_vaga
+  for insert to authenticated
+  with check (user_id = (select auth.uid()));
 create policy "reportes: admin lê" on public.reportes_vaga
   for select to authenticated
   using ((select public.is_admin()));
 
 -- palestrantes
 drop policy if exists "palestrantes: qualquer pessoa envia" on public.palestrantes;
+drop policy if exists "palestrantes: pessoa logada envia" on public.palestrantes;
 drop policy if exists "palestrantes: admin lê" on public.palestrantes;
 drop policy if exists "palestrantes: admin altera" on public.palestrantes;
 drop policy if exists "palestrantes: admin remove" on public.palestrantes;
 drop policy if exists "palestrantes: dono lê" on public.palestrantes;
-create policy "palestrantes: qualquer pessoa envia" on public.palestrantes
-  for insert to anon, authenticated
-  with check (status = 'pendente' and user_id is not distinct from (select auth.uid()));
+create policy "palestrantes: pessoa logada envia" on public.palestrantes
+  for insert to authenticated
+  with check (status = 'pendente' and user_id = (select auth.uid()));
 create policy "palestrantes: admin lê"     on public.palestrantes for select to authenticated using ((select public.is_admin()));
 create policy "palestrantes: admin altera" on public.palestrantes for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 create policy "palestrantes: admin remove" on public.palestrantes for delete to authenticated using ((select public.is_admin()));
@@ -63,13 +67,14 @@ create policy "palestrantes: dono lê"      on public.palestrantes for select to
 
 -- submissoes_artigos
 drop policy if exists "artigos: qualquer pessoa envia" on public.submissoes_artigos;
+drop policy if exists "artigos: pessoa logada envia" on public.submissoes_artigos;
 drop policy if exists "artigos: admin lê" on public.submissoes_artigos;
 drop policy if exists "artigos: admin altera" on public.submissoes_artigos;
 drop policy if exists "artigos: admin remove" on public.submissoes_artigos;
 drop policy if exists "artigos: dono lê" on public.submissoes_artigos;
-create policy "artigos: qualquer pessoa envia" on public.submissoes_artigos
-  for insert to anon, authenticated
-  with check (status = 'recebido' and user_id is not distinct from (select auth.uid()));
+create policy "artigos: pessoa logada envia" on public.submissoes_artigos
+  for insert to authenticated
+  with check (status = 'recebido' and user_id = (select auth.uid()));
 create policy "artigos: admin lê"     on public.submissoes_artigos for select to authenticated using ((select public.is_admin()));
 create policy "artigos: admin altera" on public.submissoes_artigos for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
 create policy "artigos: admin remove" on public.submissoes_artigos for delete to authenticated using ((select public.is_admin()));
@@ -84,40 +89,33 @@ create index if not exists palestrantes_user_criado       on public.palestrantes
 create index if not exists reportes_vaga_user_criado      on public.reportes_vaga (user_id, criado_em desc);
 
 -- ---------------------------------------------------------------------------
--- 3) Limite de envios
+-- 3) Limite de envios por pessoa
 -- ---------------------------------------------------------------------------
--- Duas camadas, porque quem não está logado não tem identidade no banco (o IP não chega até aqui):
---   * por pessoa logada, numa janela de tempo;
---   * teto global para envios anônimos por hora (protege o banco; o limite por IP fica no proxy, ver docs/escala-1000-usuarios.md).
--- Se o teto anônimo for atingido, quem não está logado precisa tentar mais tarde; quem está logada continua enviando.
+-- Só envia quem está logada (as políticas acima já recusam `anon`); aqui cada pessoa tem um teto numa janela de tempo.
 -- Os valores são folgados para uso humano normal. Ajuste aqui se a comunidade crescer.
+-- Defesa em profundidade: se um envio chegar sem pessoa identificada (política removida por engano), o gatilho também recusa.
 create or replace function public.limitar_envios() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare
   por_pessoa integer;
-  janela_pessoa interval;
-  teto_anonimo integer;
+  janela interval;
   recentes integer;
 begin
   case tg_table_name
-    when 'submissoes_artigos' then por_pessoa := 5;  janela_pessoa := interval '24 hours'; teto_anonimo := 20;
-    when 'palestrantes'       then por_pessoa := 3;  janela_pessoa := interval '24 hours'; teto_anonimo := 20;
-    when 'reportes_vaga'      then por_pessoa := 30; janela_pessoa := interval '1 hour';   teto_anonimo := 120;
+    when 'submissoes_artigos' then por_pessoa := 5;  janela := interval '24 hours';
+    when 'palestrantes'       then por_pessoa := 3;  janela := interval '24 hours';
+    when 'reportes_vaga'      then por_pessoa := 30; janela := interval '1 hour';
     else return new;
   end case;
 
-  if new.user_id is not null then
-    execute format('select count(*) from public.%I where user_id = $1 and criado_em > now() - $2', tg_table_name)
-      into recentes using new.user_id, janela_pessoa;
-    if recentes >= por_pessoa then
-      raise exception 'limite de envios atingido, tente novamente mais tarde' using errcode = 'P0001';
-    end if;
-  else
-    execute format('select count(*) from public.%I where user_id is null and criado_em > now() - interval ''1 hour''', tg_table_name)
-      into recentes;
-    if recentes >= teto_anonimo then
-      raise exception 'muitos envios no momento, tente novamente mais tarde' using errcode = 'P0001';
-    end if;
+  if new.user_id is null then
+    raise exception 'é preciso estar logada para enviar' using errcode = 'P0001';
+  end if;
+
+  execute format('select count(*) from public.%I where user_id = $1 and criado_em > now() - $2', tg_table_name)
+    into recentes using new.user_id, janela;
+  if recentes >= por_pessoa then
+    raise exception 'limite de envios atingido, tente novamente mais tarde' using errcode = 'P0001';
   end if;
 
   return new;

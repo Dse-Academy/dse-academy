@@ -41,7 +41,8 @@ const tenta = async (rotulo, fn) => { try { await fn(); return `${rotulo}: aceit
 
 const A = "11111111-1111-1111-1111-111111111111";
 const B = "22222222-2222-2222-2222-222222222222";
-await db.exec(`insert into auth.users (id, email) values ('${A}','a@x.com'), ('${B}','b@x.com');`);
+const C = "33333333-3333-3333-3333-333333333333"; // pessoa sem nenhum envio: o limite não interfere, quem recusa é a RLS
+await db.exec(`insert into auth.users (id, email) values ('${A}','a@x.com'), ('${B}','b@x.com'), ('${C}','c@x.com');`);
 
 const artigo = (n, uid = "") => `insert into public.submissoes_artigos (nome,email,bio,titulo,resumo,tags,link_rascunho,aceite_lgpd,aceite_direitos${uid ? ",user_id" : ""})
   values ('Ana','a@x.com','bio de teste com mais de vinte caracteres','Titulo ${n}','resumo de teste com mais de vinte caracteres','{x}','https://x.com/${n}',true,true${uid ? `,'${uid}'` : ""})`;
@@ -59,20 +60,29 @@ const vistoPorA = await como("authenticated", A, async () => (await db.query("se
 const vistoPorB = await como("authenticated", B, async () => (await db.query("select count(*)::int n from public.submissoes_artigos")).rows[0].n);
 console.log(`A enxerga ${vistoPorA} artigo(s) (esperado 5); B enxerga ${vistoPorB} (esperado 1)`);
 
-// 4) anônimo: não consegue atribuir o envio a outra pessoa, nem ler
-console.log(await como("anon", "", () => tenta("anônimo grava como se fosse a pessoa A", () => db.exec(artigo(200, A)))));
-console.log(await como("anon", "", () => tenta("anônimo envia artigo anônimo", () => db.exec(artigo(201)))));
+// 4) anônimo não envia nada (artigo, palestrante e relato) nem lê
+const palestrante = (uid) => `insert into public.palestrantes (nome,email,bio,temas,formatos,modalidade,aceite_lgpd${uid ? ",user_id" : ""})
+  values ('Bia','b@x.com','bio de teste com mais de vinte caracteres','{x}','{palestra}','remoto',true${uid ? `,'${uid}'` : ""})`;
+const relato = (uid) => `insert into public.reportes_vaga (vaga_id,tipo${uid ? ",user_id" : ""}) values ('v1','outro'${uid ? `,'${uid}'` : ""})`;
+console.log(await como("anon", "", () => tenta("anônimo envia artigo", () => db.exec(artigo(201)))));
+console.log(await como("anon", "", () => tenta("anônimo envia cadastro de palestrante", () => db.exec(palestrante()))));
+console.log(await como("anon", "", () => tenta("anônimo envia relato de vaga", () => db.exec(relato()))));
+console.log(await como("anon", "", () => tenta("anônimo grava em nome da pessoa C (recusa pela RLS)", () => db.exec(artigo(202, C)))));
 const anonLe = await como("anon", "", async () => (await db.query("select count(*)::int n from public.submissoes_artigos")).rows[0].n);
 console.log(`anônimo enxerga ${anonLe} artigo(s) (esperado 0)`);
 
-// 5) teto global anônimo (20/h): preenche e testa a recusa
-let recusou = null;
-for (let i = 300; i < 330; i++) {
-  try { await como("anon", "", () => db.exec(artigo(i))); } catch (e) { recusou = i; break; }
+// 5) pessoa logada: não pode enviar em nome de outra, e os três formulários funcionam para ela
+console.log(await como("authenticated", B, () => tenta("pessoa B grava artigo em nome da pessoa C (recusa pela RLS)", () => db.exec(artigo(300, C)))));
+console.log(await como("authenticated", B, () => tenta("pessoa B grava palestrante em nome da pessoa C (recusa pela RLS)", () => db.exec(palestrante(C)))));
+console.log(await como("authenticated", B, () => tenta("pessoa B grava relato em nome da pessoa C (recusa pela RLS)", () => db.exec(relato(C)))));
+console.log(await como("authenticated", B, () => tenta("pessoa B envia palestrante em seu nome", () => db.exec(palestrante(B)))));
+console.log(await como("authenticated", B, () => tenta("pessoa B envia relato em seu nome", () => db.exec(relato(B)))));
+// limite de relatos: 30 por hora
+let recusouRelato = null;
+for (let i = 1; i <= 35; i++) {
+  try { await como("authenticated", A, () => db.exec(relato(A))); } catch { recusouRelato = i; break; }
 }
-console.log(`teto anônimo: recusou a partir do envio nº ${recusou - 300 + 1 + 1} (esperado perto de 20, contando o anônimo anterior)`);
-// quem está logada continua podendo enviar (pessoa B ainda tem limite)
-console.log(await como("authenticated", B, () => tenta("pessoa B envia durante o teto anônimo", () => db.exec(artigo(400, B)))));
+console.log(`relatos da pessoa A: recusou a partir do nº ${recusouRelato} (esperado 31)`);
 
 // 6) índices e funções existem
 const idx = (await db.query(`select indexname from pg_indexes where schemaname='public' and indexname like '%user_criado' order by 1`)).rows.map((r) => r.indexname);

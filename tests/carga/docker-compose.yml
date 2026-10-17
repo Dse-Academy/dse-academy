@@ -1,0 +1,71 @@
+# Ambiente de teste de carga, 100% local e descartável. NUNCA aponte os cenários para a produção.
+#
+# Sobe: um Postgres com as migrations do projeto (limitado a 1 CPU e 1 GB, parecido com o menor plano do Supabase), o
+# PostgREST (a mesma API que o Supabase usa) e um nginx que repete o caminho /rest/v1 do gateway do Supabase.
+# O site (Next.js) roda fora do Docker, no computador, e o k6 roda em um contêiner.
+#
+# Uso: veja tests/carga/README.md (o jeito mais simples é ./rodar.sh).
+
+name: carga
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: senha-de-teste
+      SEED_USUARIOS: ${SEED_USUARIOS:-1000}
+    volumes:
+      - ./banco/00_stubs.sql:/docker-entrypoint-initdb.d/00_stubs.sql:ro
+      - ./banco/10_migrations_e_seed.sh:/docker-entrypoint-initdb.d/10_migrations_e_seed.sh:ro
+      - ./banco/90_seed.sql:/seed/90_seed.sql:ro
+      - ../../supabase/migrations:/migrations:ro
+    # Parecido com o Supabase gratuito/micro: poucos recursos. Se passar aqui, passa com folga no banco de verdade.
+    cpus: 1.0
+    mem_limit: 1g
+    healthcheck:
+      # -h 127.0.0.1: só o servidor definitivo escuta em TCP (o temporário da inicialização usa só o socket).
+      # A tabela carga.pronto é criada no fim do seed: sem ela os dados ainda estão sendo carregados.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres && psql -h 127.0.0.1 -U postgres -tAc \"select count(*) from carga.pronto\" | grep -q 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 60
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PGRST_DB_URI: postgres://authenticator:senha-de-teste@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET:-segredo-de-teste-com-mais-de-32-caracteres-ok}
+      PGRST_DB_POOL: 20
+      PGRST_DB_MAX_ROWS: 1000
+    cpus: 1.0
+    mem_limit: 512m
+
+  gateway:
+    image: nginx:1.27-alpine
+    depends_on:
+      - postgrest
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "3300:80"
+
+  k6:
+    image: grafana/k6:latest
+    profiles: ["k6"]
+    depends_on:
+      - gateway
+    volumes:
+      - ./k6:/scripts:ro
+      - ../../apps/web/data:/dados:ro
+      - ./resultados:/resultados
+    environment:
+      DB_URL: http://gateway/rest/v1
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:3199}
+      JWT_SECRET: ${JWT_SECRET:-segredo-de-teste-com-mais-de-32-caracteres-ok}
+      SEED_USUARIOS: ${SEED_USUARIOS:-1000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

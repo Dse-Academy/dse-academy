@@ -1,0 +1,4 @@
+# Scripts de shell precisam de quebras de linha Unix, mesmo em checkout no Windows.
+*.sh text eol=lf
+*.sql text eol=lf
+*.conf text eol=lf

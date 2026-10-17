@@ -107,7 +107,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Baixar a coleta
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coleta-gupy-${{ github.run_id }}
           path: data/raw/

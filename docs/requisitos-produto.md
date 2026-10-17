@@ -26,12 +26,11 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 | SEG-05 | Segredos expostos devem ser rotacionados e haver política de rotação | CORRIGIR | P0 | token do Apps Script e outros apareceram em conversa | tokens novos em uso; antigos revogados; procedimento documentado | procedimento e varredura prontos; troca dos segredos expostos **dispensada por decisão da liderança (risco aceito, reavaliar em 17/04/2027)**; política de rotação segue valendo |
 | SEG-06 | Contas de admin devem ter MFA e toda ação administrativa deve ser registrada (quem, o quê, quando) | CRIAR | P1 | admin só por e-mail/Google; sem trilha de auditoria | TOTP obrigatório para `/admin`; tabela `auditoria_admin` preenchida por trigger | pendente |
 | SEG-07 | As políticas RLS devem ter testes automatizados que falham o CI se alguém ler dado de outra pessoa | CRIAR | P1 | sem teste de banco no CI | cenários "A não vê B", "anônimo não lê", "limites" rodam no CI | script validado localmente, **falta ligar no CI** |
-| SEG-08 | Dependências devem ser verificadas continuamente (Dependabot, auditoria de npm/pip, CodeQL) | CRIAR | P1 | `npm audit` limpo hoje; Dependabot desativado | alertas e PRs automáticos ativos | pendente |
+| SEG-08 | Dependências devem ser verificadas continuamente (Dependabot, auditoria de npm/pip, CodeQL) | CRIAR | P1 | `npm audit` limpo hoje; Dependabot desativado | alertas e PRs automáticos ativos | feito: Dependabot (npm, pip, Actions), CodeQL e auditoria de dependências; 13 PRs do Dependabot triados. Alertas do CodeQL: 2 corrigidos, 3 de XSS no site antigo na issue #109 |
 | SEG-09 | A branch `main` deve exigir PR, CI verde e proibir força-push | CRIAR | P0 | `main` sem proteção | regra ativa no GitHub | feito: ruleset "Proteger main" ativo (PR + checks api, web e apps-script; sem force-push e sem exclusão); exceção só para a deploy key `workflow-dados` |
 | SEG-10 | Backups não podem ficar legíveis em repositório público: devem ser cifrados antes de sair do banco | CRIAR | P0 | repositório é público; artefatos de Actions seriam legíveis | arquivo de backup só abre com a senha; senha fora do repositório | pendente |
 | SEG-11 | Conteúdo de formulários deve ser tratado como texto (sem HTML) em todo lugar | APERFEIÇOAR | P0 | React escapa; Apps Script envia texto puro; URLs `https` exigidas no banco | teste com `<script>` em todos os campos não executa nada | feito (manter testes) |
-| SEG-12 | Segredos nunca no repositório; varredura ativa | APERFEIÇOAR | P1 | `.env` ignorado; secret scanning e push protection ativos | mantidos; revisão trimestral | feito |
-
+| SEG-12 | Segredos nunca no repositório; varredura ativa | APERFEIÇOAR | P1 | `.env` ignorado; secret scanning e push protection ativos | mantidos; revisão trimestral | feito: varredura de segredos, proteção de push e Dependabot religados depois da migração para a organização (não vêm junto na transferência) |
 ## 2. Privacidade e LGPD
 
 | ID | Requisito | Tipo | Pri. | Evidência | Critério de aceite | Estado |
@@ -50,10 +49,10 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 |---|---|---|---|---|---|---|
 | DISP-01 | O banco não pode pausar por inatividade | CRIAR | P0 | plano gratuito pausa após ~7 dias sem uso | rotina a cada 2 dias; banco nunca pausa | feito: workflow diário `Anti-pausa do banco`, testado (HTTP 200) |
 | DISP-02 | **Backup** diário cifrado do banco, com **teste de restauração** mensal | CRIAR | P0 | plano gratuito sem backups | restauração em máquina limpa dentro do RTO | pendente |
-| DISP-03 | Deve haver **monitoramento** com alerta de indisponibilidade | CRIAR | P0 | ninguém é avisado se o site cair | alerta por e-mail em até 10 minutos | pendente |
-| DISP-04 | O front deve expor `/api/health` e a API `/health` | CRIAR | P1 | front sem endpoint; API tem `/health` | monitor consulta ambos | pendente |
+| DISP-03 | Deve haver **monitoramento** com alerta de indisponibilidade | CRIAR | P0 | ninguém é avisado se o site cair | alerta por e-mail em até 10 minutos | parcial: monitor a cada 15 min no GitHub Actions (abre e fecha incidente sozinho), testado; falta o monitor externo para alertar em até 10 min |
+| DISP-04 | O front deve expor `/api/health` e a API `/health` | CRIAR | P1 | front sem endpoint; API tem `/health` | monitor consulta ambos | feito: `/api/health` e `/api/health?db=1` (503 se o banco falhar), verificado em produção; a API já tinha `/health` |
 | DISP-05 | Se o banco falhar, o conteúdo público deve continuar e as áreas logadas devem avisar de forma clara | APERFEIÇOAR | P1 | erros tratados em várias telas; sem teste | teste com banco desligado mantém vagas e trilhas | parcial |
-| DISP-06 | Páginas de erro próprias (404, erro, erro global) com saída para o início | CRIAR | P1 | páginas padrão do Next | telas no padrão visual do site | pendente |
+| DISP-06 | Páginas de erro próprias (404, erro, erro global) com saída para o início | CRIAR | P1 | páginas padrão do Next | telas no padrão visual do site | feito: 404, erro e erro global próprios; 404 verificado em produção, erro verificado no navegador (o global-error não foi provocado) |
 | DISP-07 | Plano de recuperação (runbook) com RPO e RTO | CRIAR | P1 | metas só em documento | passo a passo testado | pendente |
 | DISP-08 | Deploy seguro: prévia por PR, rollback documentado, migrations aplicadas em ordem e registradas | APERFEIÇOAR | P1 | prévia por PR existe; migrations rodadas à mão no SQL Editor | `supabase db push` ou equivalente; histórico de migrations aplicadas | parcial |
 

@@ -73,7 +73,10 @@ class _HandlerSPA(http.server.SimpleHTTPRequestHandler):
             print(f"  caminho inexistente {rota!r} -> redirecionando para /")
             self.send_response(302)
             # A query volta no cabeçalho Location: reescapa para nunca carregar quebra de linha (separação de resposta HTTP).
-            seguro = urllib.parse.quote(urllib.parse.unquote(query), safe="=&,;:@/+")
+            # Remove qualquer CR/LF (também os decodificados de %0d%0a) antes de reescapar o resto.
+            sem_quebras = urllib.parse.unquote(query).replace("", "").replace("
+", "")
+            seguro = urllib.parse.quote(sem_quebras, safe="=&,;:@/+")
             self.send_header("Location", "/" + (f"?{seguro}" if seguro else ""))
             self.end_headers()
             return None

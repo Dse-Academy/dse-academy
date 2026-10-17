@@ -1,0 +1,108 @@
+# Monitor de disponibilidade do site (requisito DISP-03).
+#
+# A cada 15 minutos confere se o site responde e mostra o conteúdo esperado:
+#   - a home responde 200 e contém "DSE Academy";
+#   - /vagas responde 200 e mostra pelo menos 1 vaga ("N vagas").
+# Cada checagem tenta 3 vezes (10 s entre as tentativas) antes de declarar falha, para não alarmar por um solavanco.
+#
+# Alerta: ao falhar, abre uma issue com o rótulo "incidente" (quem acompanha o repositório recebe notificação) e o job
+# fica vermelho (o GitHub também avisa por e-mail). Quando o site volta, o próprio monitor comenta e fecha a issue.
+#
+# Configuração: variável do repositório SITE_URL (ex.: https://dse-academy-chi.vercel.app). Ao mudar de domínio, é só atualizar.
+# Limite: o agendamento do GitHub pode atrasar alguns minutos e não é um SLA. Isto é a primeira camada; um monitor externo
+# (Uptime Kuma / UptimeRobot) deve ser a segunda.
+
+name: Monitor do site
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: "Endereço a verificar (vazio = variável SITE_URL). Use um endereço inválido para testar o alerta."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: monitor-do-site
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      SITE: ${{ github.event.inputs.site_url || vars.SITE_URL }}
+    steps:
+      - name: Verificar o site
+        id: checar
+        run: |
+          set -uo pipefail
+          if [ -z "${SITE}" ]; then
+            echo "::error::A variável SITE_URL não está configurada."
+            echo "motivo=SITE_URL não configurada" >> "$GITHUB_OUTPUT"; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          SITE="${SITE%/}"
+
+          # Devolve 0 se, em até 3 tentativas, a página responde 200 e o corpo casa com o padrão.
+          conferir() {
+            local caminho="$1" padrao="$2" tentativa codigo
+            for tentativa in 1 2 3; do
+              codigo=$(curl -sS -o corpo.html -w "%{http_code}" --max-time 20 -A "monitor-dse-academy" "${SITE}${caminho}" 2>/dev/null || echo "000")
+              if [ "${codigo}" = "200" ] && grep -Eq "${padrao}" corpo.html; then
+                echo "OK   ${caminho} (HTTP ${codigo})"; return 0
+              fi
+              echo "FALHA ${caminho}: HTTP ${codigo}, tentativa ${tentativa}/3"
+              [ "${tentativa}" -lt 3 ] && sleep 10
+            done
+            return 1
+          }
+
+          falhas=""
+          conferir "/" "DSE Academy" || falhas="${falhas} /"
+          conferir "/vagas" "[1-9][0-9]* vagas?" || falhas="${falhas} /vagas"
+
+          if [ -z "${falhas}" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "motivo=falhou em:${falhas}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Abrir incidente se o site caiu
+        if: steps.checar.outputs.ok != 'true'
+        run: |
+          set -uo pipefail
+          aberto=$(gh issue list --label incidente --state open --json number --jq '.[0].number // empty')
+          if [ -n "${aberto}" ]; then
+            echo "Já existe o incidente #${aberto}; nada a abrir."
+          else
+            gh issue create --label incidente --title "Site fora do ar ou com conteúdo inesperado" --body "O monitor detectou um problema em **${SITE}**: ${{ steps.checar.outputs.motivo }}.
+
+          - Horário (UTC): $(date -u '+%Y-%m-%d %H:%M')
+          - Execução: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          **Primeiros passos:** abrir o site, ver o painel da Vercel (Deployments) e o status do Supabase. Esta issue é fechada sozinha quando o site voltar."
+          fi
+
+      - name: Fechar incidente se o site voltou
+        if: steps.checar.outputs.ok == 'true'
+        run: |
+          set -uo pipefail
+          for n in $(gh issue list --label incidente --state open --json number --jq '.[].number'); do
+            gh issue comment "${n}" --body "O site voltou a responder normalmente (verificado em $(date -u '+%Y-%m-%d %H:%M') UTC). Fechando."
+            gh issue close "${n}"
+          done
+
+      - name: Falhar o job se o site caiu
+        if: steps.checar.outputs.ok != 'true'
+        run: |
+          echo "::error::Site com problema: ${{ steps.checar.outputs.motivo }}"
+          exit 1

@@ -18,6 +18,7 @@ import http.server
 import json
 import os
 import shutil
+import urllib.parse
 import webbrowser
 from pathlib import Path
 
@@ -71,7 +72,9 @@ class _HandlerSPA(http.server.SimpleHTTPRequestHandler):
         if not Path(self.translate_path(rota)).exists() and not Path(rota).suffix:
             print(f"  caminho inexistente {rota!r} -> redirecionando para /")
             self.send_response(302)
-            self.send_header("Location", "/" + (f"?{query}" if query else ""))
+            # A query volta no cabeçalho Location: reescapa para nunca carregar quebra de linha (separação de resposta HTTP).
+            seguro = urllib.parse.quote(urllib.parse.unquote(query), safe="=&,;:@/+")
+            self.send_header("Location", "/" + (f"?{seguro}" if seguro else ""))
             self.end_headers()
             return None
         return super().send_head()

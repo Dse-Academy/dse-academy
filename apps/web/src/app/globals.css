@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Paleta da DSE Academy (a mesma do portal atual em app/web/styles.css), em dois temas.
+/* Paleta da DSE Academy (a mesma do site antigo, já aposentado; está no histórico do Git), em dois temas.
    O tema vem de <html data-theme="light|dark">, definido antes da primeira pintura pelo script do layout.
    Cores de texto e fundo são "semânticas" (titulo, suave, superficie...) para trocar de tema sem mexer nos componentes. */
 :root,

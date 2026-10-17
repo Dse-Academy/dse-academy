@@ -6,11 +6,13 @@ emprego a entender **o que o mercado pede e o que falta no próprio perfil**.
 
 Um projeto da comunidade DSE Academy, feito pela comunidade de dados para a comunidade de dados.
 
-> **Dois sites convivem neste repositório.** O **site novo** (Next.js + Supabase, em `apps/web`) está no ar na Vercel:
-> <https://dse-academy-chi.vercel.app>. Ele tem trilhas de estudo, aderência às vagas, formulários de artigo e de palestrante
-> e o painel de administração. O **site antigo** (HTML/JS estático, em `app/`) segue sendo gerado pelo workflow semanal até o novo
-> assumir tudo. Quase todo o texto abaixo descreve o site antigo e o pipeline de dados; o site novo está em
+> **Site no ar:** <https://dse-academy-chi.vercel.app> (Next.js + Supabase, em `apps/web`), com vagas, trilhas de estudo,
+> aderência ao perfil, formulários de artigo e de palestrante e o painel de administração. Detalhes em
 > [Site novo (Next.js + Supabase)](#site-novo-nextjs--supabase).
+>
+> O **site antigo** (HTML/JS estático) foi **aposentado**: o novo cobre as funcionalidades e o antigo nunca chegou a ser
+> publicado no GitHub Pages. O código dele continua no histórico do Git. Este README descreve principalmente o **pipeline de
+> dados** (coleta, enriquecimento e trilhas), que alimenta o site.
 
 ---
 
@@ -21,8 +23,7 @@ Um projeto da comunidade DSE Academy, feito pela comunidade de dados para a comu
 - [Tecnologias](#tecnologias)
 - [Começando](#começando)
 - [Configuração](#configuração)
-- [Login e perfil do candidato](#login-e-perfil-do-candidato)
-- [Automação e publicação](#automação-e-publicação)
+- [Automação](#automação)
 - [Metodologia](#metodologia)
 - [Enriquecimento com LLM (opcional)](#enriquecimento-com-llm-opcional)
 - [Estrutura do repositório](#estrutura-do-repositório)
@@ -35,26 +36,13 @@ Um projeto da comunidade DSE Academy, feito pela comunidade de dados para a comu
 
 ## Funcionalidades
 
-**Para quem busca vaga**
+O que as pessoas usam está no [site novo](#site-novo-nextjs--supabase). Por trás dele, este repositório faz:
 
-| Tela | O que faz |
-|---|---|
-| **Vagas** (`#/`) | Busca por cargo, empresa ou tecnologia, com filtros de senioridade, stacks, empresa e modelo de trabalho. Ordena por mais recentes, mais relevantes (quando há busca) ou **mais aderentes ao meu perfil**. |
-| **Detalhe da vaga** (`#/vaga/<id>`) | Descrição completa, senioridade, modelo, contrato, stacks citadas e link para se candidatar na fonte original. |
-| **Aderência à vaga** (`#/vaga/<id>/aderencia`) | Percentual das stacks da vaga que a pessoa já tem, o que falta (em ordem de prioridade no mercado) e o encaixe de nível e área. |
-| **Perfil de competências** (`#/perfil` → `#/perfil/resultado`) | As skills mais pedidas por área e nível, com o percentual de vagas que citam cada uma, e o que priorizar a partir do que a pessoa já sabe. O resultado tem URL própria e pode ser compartilhado. |
-| **Meu perfil** (`#/candidato`) | Vagas salvas e **Minhas skills**: etiquetas editáveis com autocompletar, cobertura das 10 skills mais pedidas na área de interesse e sugestões do que aprender. |
-| **Entrar** (`#/entrar`) | Login por link no e-mail, sem senha. |
-| **Política de privacidade** (`#/privacidade`) | Quais dados o portal trata, para quê, com quem, por quanto tempo e como exercer os direitos da LGPD. Link no rodapé, no login e em Meu perfil. |
-| **Boas-vindas** (`#/boas-vindas`) | No primeiro login, 3 passos (área, nível e skills, com sugestões da área) que já deixam a busca ordenada por aderência. Pode ser pulado e refeito em Meu perfil. |
-| **Algo errado nesta vaga?** (na página da vaga) | Relato de stack errada, vaga fora da área, senioridade errada ou vaga encerrada, sem precisar de login. |
-
-**Por trás do portal**
-
-- Coleta semanal automática das vagas, com trava contra coletas suspeitas
+- Coleta semanal automática das vagas da Gupy, com trava contra coletas suspeitas
 - Deduplicação de vagas republicadas e ocultação automática de vagas com prazo vencido
-- Identificação de **99 skills** (sinônimos em português e inglês) em cada descrição
-- Interface responsiva (desktop, tablet e celular), com foco em acessibilidade
+- Identificação de **99 skills** (sinônimos em português e inglês) em cada descrição, e de senioridade e área pelo título
+- Enriquecimento opcional com LLM (obrigatória × desejável, vagas fora do escopo)
+- **Trilhas de estudo** por área, do básico ao avançado, geradas a partir da demanda real das vagas
 
 ---
 
@@ -62,12 +50,13 @@ Um projeto da comunidade DSE Academy, feito pela comunidade de dados para a comu
 
 ```
                    ┌──────────────────────────────────────────────┐
-  Toda sexta,      │  GitHub Actions (.github/workflows/)         │
+  Toda sexta,      │  GitHub Actions (.github/workflows/pipeline) │
   02:00 (Brasília) │                                              │
                    │  1. testes                                   │
                    │  2. coleta da Gupy ──► data/raw/*.json       │
-                   │  3. build do site ──► site/                  │
-                   │  4. deploy ──► GitHub Pages                  │
+                   │  3. gera vagas.json, descricoes.json,        │
+                   │     trilhas.json em apps/web/data/           │
+                   │  4. commit na main ──► a Vercel publica      │
                    └──────────────────────────────────────────────┘
 
   ingestion/gupy.py        coleta paginada, rate limit, retry, normalização, trava de coleta
@@ -76,17 +65,14 @@ Um projeto da comunidade DSE Academy, feito pela comunidade de dados para a comu
   enrichment/taxonomia.py  stacks por palavra-chave (taxonomy.yaml)
   enrichment/extractor.py  senioridade e área pelo título; LLM opcional
           │
-  app/dados.py             junta coleta + stacks + enriquecimento ──► dados.js + descricoes.js
-  app/build_site.py        copia app/web/ e gera site/ (dados.js, descricoes.js e config.js)
+  app/dados.py             junta coleta + stacks + enriquecimento
+  app/exportar_json.py     escreve apps/web/data/vagas.json e descricoes.json (e a taxonomia para o site)
+  trilhas/gerar.py         escreve apps/web/data/trilhas.json
           │
-  Navegador                busca, filtros, perfil de competências e aderência rodam no cliente
+  apps/web (Next.js)       páginas estáticas de vagas e trilhas; login, perfil e formulários falam com o Supabase
           │
-  Supabase                 login (Auth) + perfis e vagas salvas (Postgres com Row Level Security)
+  Supabase                 login (Auth) + Postgres com Row Level Security (a autorização é feita no banco)
 ```
-
-O portal é um **site estático**: não há servidor próprio. Os dados das vagas são gerados no build e todos
-os cálculos rodam no navegador. As descrições das vagas (cerca de 85% do volume) ficam em `descricoes.js`,
-carregado em segundo plano depois que a página aparece: a abertura baixa só `dados.js` (~50 KB comprimido). Só o login e o perfil do candidato usam um serviço externo (Supabase).
 
 ---
 
@@ -96,16 +82,18 @@ carregado em segundo plano depois que a página aparece: a abertura baixa só `d
 |---|---|
 | Coleta e processamento | Python 3.13, `httpx`, `pydantic`, `pyyaml` |
 | Enriquecimento opcional | `google-genai` (Gemini) ou Ollama local |
-| Front-end | HTML, CSS e JavaScript sem framework |
-| Conta do candidato | Supabase (Auth + Postgres) via `supabase-js` |
-| Automação e hospedagem | GitHub Actions + GitHub Pages |
-| Testes | `pytest` |
+| Trilhas | Groq (modelos abertos) ou Ollama, com plano de reserva por regras |
+| Site | Next.js, TypeScript e Tailwind (`apps/web`) |
+| Conta, dados e autorização | Supabase (Auth + Postgres + RLS) |
+| Hospedagem do site | Vercel |
+| Automação | GitHub Actions |
+| Testes | `pytest`, `node --test` e PGlite (banco embutido, para as migrations) |
 
 ---
 
 ## Começando
 
-**Requisitos:** Python 3.13 e Git.
+**Requisitos:** Python 3.13, Node.js 24 e Git.
 
 ```bash
 git clone git@github.com:Dse-Academy/dse-academy.git
@@ -130,84 +118,44 @@ python -m pytest -q
 python -m ingestion.gupy
 ```
 
-**Gerar e abrir o site**
+**Gerar os dados do site e rodá-lo** (veja o passo a passo completo em [`apps/web/README.md`](apps/web/README.md))
 
 ```bash
-python -m app.build_site --servir
+python -m app.exportar_json     # vagas.json e descricoes.json
+python -m trilhas.gerar         # trilhas.json
+cd apps/web && npm ci && npm run dev    # http://localhost:3000
 ```
-
-O site fica em `http://localhost:8765`. Use `--servir` sempre que for testar o login: o link enviado por
-e-mail precisa voltar para um endereço `http://`. A opção `--abrir` abre o arquivo direto do disco, sem login.
 
 ---
 
 ## Configuração
 
-Copie `.env.example` para `.env`. Todas as variáveis são opcionais: sem elas, o portal funciona em modo local.
+Copie `.env.example` para `.env`. Todas as variáveis são opcionais para a coleta; o site tem o próprio `.env.local` (veja `apps/web/README.md`).
 
 | Variável | Uso |
 |---|---|
-| `SUPABASE_URL` | URL do projeto Supabase (`https://<projeto>.supabase.co`) |
-| `SUPABASE_ANON_KEY` | Chave **publishable/anon** do Supabase. É pública por design; **nunca** use a chave *secret*/*service_role* |
-| `AUTH_PROVEDORES` | Provedores OAuth habilitados no Supabase, separados por vírgula (ex.: `github,google`) |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | Projeto Supabase usado pela API (`apps/api`). A chave **publishable/anon** é pública por design; **nunca** use a chave *secret*/*service_role* |
+| `GROQ_API_KEY` / `GROQ_MODEL` | Geração das trilhas com modelo aberto (padrão `openai/gpt-oss-120b`). Sem a chave, as trilhas saem por regras |
 | `GEMINI_API_KEY` | Chave da API do Gemini, só para o enriquecimento com LLM |
 | `GEMINI_MODEL` / `GEMINI_RPM` | Modelo e limite de requisições por minuto do Gemini |
 | `OLLAMA_MODEL` / `OLLAMA_URL` | Modelo e endereço do Ollama local |
-| `PRIVACIDADE_RESPONSAVEL` | Quem responde pelos dados (controlador), exibido na política de privacidade |
-| `PRIVACIDADE_CONTATO` | E-mail para pedidos de privacidade (LGPD) |
-| `PRIVACIDADE_REGIAO_DADOS` | Região do projeto Supabase (ex.: `São Paulo (sa-east-1)`) |
 
 O `.env` nunca é versionado.
 
 ---
 
-## Login e perfil do candidato
+## Automação
 
-**Sem Supabase configurado**, o portal funciona em modo local: as vagas salvas ficam só no navegador.
-
-**Com Supabase**, a pessoa entra com um link enviado ao e-mail (PKCE) e o perfil acompanha em qualquer aparelho.
-
-### Configurando o Supabase
-
-1. Crie um projeto em [supabase.com](https://supabase.com) (plano gratuito). Para público brasileiro, prefira a região São Paulo.
-2. Em **SQL Editor**, rode as migrações em ordem:
-   [`001_perfil_candidato.sql`](supabase/migrations/001_perfil_candidato.sql) e
-   [`002_reportes_vaga.sql`](supabase/migrations/002_reportes_vaga.sql).
-3. Em **Authentication → URL Configuration**:
-   - **Site URL:** `http://localhost:8765` (em produção, a URL do GitHub Pages)
-   - **Redirect URLs:** `http://localhost:8765/**` e a URL do GitHub Pages com `/**`
-4. Preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` no `.env`.
-5. Para uso real, configure um SMTP próprio em **Authentication → Emails**: o envio padrão tem limite baixo por hora.
-
-### Segurança e privacidade
-
-- **Row Level Security:** cada pessoa só lê e altera as próprias linhas em `perfis` e `vagas_salvas`,
-  mesmo com a chave pública no site. Inserções anônimas são recusadas.
-- **Limite:** até 500 vagas salvas por pessoa.
-- **Relatos de erro:** qualquer pessoa pode enviar, mas a tabela `reportes_vaga` não tem política de leitura:
-  ninguém lê os relatos pelo site. Relatos de quem está logado ficam ligados à conta; os demais são anônimos.
-- **LGPD:** são guardados só o e-mail, o que a pessoa preenche no perfil, as vagas que ela salva e os relatos que envia.
-  Em *Meu perfil → Excluir minha conta*, a função `excluir_minha_conta()` apaga conta, perfil e vagas salvas.
-
----
-
-## Automação e publicação
-
-O workflow [`.github/workflows/pipeline.yml`](.github/workflows/pipeline.yml) roda **toda sexta às 02:00
+O workflow [`.github/workflows/pipeline.yml`](.github/workflows/pipeline.yml) (*Coleta e publicação*) roda **toda sexta às 02:00
 (horário de Brasília)** e também sob demanda (*Actions → Coleta e publicação → Run workflow*):
 
-1. roda os testes;
-2. coleta as vagas com `--minimo 200`: se vierem menos de 200 vagas únicas, a coleta **não é gravada** e nada é publicado;
-3. guarda o JSON bruto da coleta como artefato por 90 dias;
-4. gera o site e publica no GitHub Pages.
+1. **`coletar`:** roda os testes, coleta as vagas com `--minimo 200` (se vierem menos de 200 vagas únicas, a coleta **não é gravada** e nada é atualizado) e guarda o JSON bruto como artefato por 90 dias;
+2. **`dados-do-site-novo`:** gera `vagas.json`, `descricoes.json` e `trilhas.json` e **commita no `main`** quando algo muda; a Vercel publica sozinha a cada commit.
 
-Se qualquer etapa falhar, o site anterior continua no ar e o GitHub avisa por e-mail.
+Se qualquer etapa falhar, o site continua no ar com os dados anteriores e o GitHub avisa por e-mail.
 
-**Configuração única no GitHub**
-
-- *Settings → Pages → Source:* **GitHub Actions**
-- *Settings → Secrets and variables → Actions → Variables:* `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-  `PRIVACIDADE_RESPONSAVEL`, `PRIVACIDADE_CONTATO`, `PRIVACIDADE_REGIAO_DADOS` e, se usar, `AUTH_PROVEDORES`
+**Configuração no GitHub:** o secret `DEPLOY_KEY` (chave de deploy usada pelo commit automático na `main` protegida) e, opcionalmente, o secret `GROQ_API_KEY`.
+Há outros workflows: *CI* (testes em todo PR), *CodeQL*, *Auditoria de dependências*, *Anti-pausa do banco* e *Monitor do site*.
 
 ---
 
@@ -252,10 +200,10 @@ Fica a publicação aberta mais recente; banco de talentos só representa o grup
 
 - **Aderência exibida:** `stacks da vaga que a pessoa tem ÷ stacks identificadas na vaga`.
 - **Ordenação por aderência:** usa uma nota suavizada, `tem ÷ (total + 2)`, para que uma vaga com "1 de 1"
-  (100%) não fique à frente de uma com "6 de 8" (75%), que diz mais. A constante é `SUAVIZACAO_ADERENCIA` em `app.js`.
+  (100%) não fique à frente de uma com "6 de 8" (75%), que diz mais. A constante está em `apps/web/src/lib/aderencia.ts`.
 - **O que falta:** ordenado pelo percentual de vagas da mesma área que citam cada skill.
 
-### Perfil de competências
+### Perfil de competências (ainda não portado para o site novo)
 
 Percentual de vagas abertas (da área e do nível escolhidos) que citam cada skill. Amostras com menos de 20 vagas
 recebem o aviso "amostra pequena".
@@ -309,11 +257,10 @@ O resultado vai para `data/enriched/*.jsonl` e é usado automaticamente no próx
 ## Estrutura do repositório
 
 ```
-.github/workflows/pipeline.yml   coleta semanal e publicação no GitHub Pages
+.github/workflows/                coleta semanal, CI, CodeQL, auditoria, anti-pausa e monitor
 app/
-  build_site.py                  gera site/ e serve localmente (--servir)
-  dados.py                       junta coleta, stacks e enriquecimento em dados.js
-  web/                           front-end: index.html, styles.css, app.js, conta.js, logo
+  dados.py                       junta coleta, stacks e enriquecimento
+  exportar_json.py               escreve os JSON do site (apps/web/data)
 enrichment/
   schema.py                      modelos (Pydantic), enums e deduplicação
   taxonomy.yaml                  99 skills, sinônimos, hierarquia e termos ignorados
@@ -329,21 +276,21 @@ integrations/apps-script/        aviso por e-mail dos formulários (Google Apps 
 apps/web/                        site novo (Next.js)
 apps/api/                        API (FastAPI)
 trilhas/                         gerador das trilhas de estudo
-tests/                           testes do conector, da taxonomia e do extrator
+tests/                           testes do conector, da taxonomia, do extrator, das trilhas e das migrations (tests/banco)
 main.py                          atalho para a coleta da Gupy
 ```
 
-Arquivos gerados e não versionados: `data/` (coletas e enriquecimentos), `site/` (build) e `.env`.
+Arquivos gerados e não versionados: `data/` (coletas e enriquecimentos) e `.env`. (Os JSON do site em `apps/web/data/` **são** versionados.)
 
 ---
 
 ## Desenvolvimento
 
-- **Testes:** `python -m pytest -q` (58 testes). Os testes do extrator usam um LLM simulado, sem chamadas externas.
+- **Testes:** `python -m pytest -q`. Os testes do extrator usam um LLM simulado, sem chamadas externas; `tests/test_compilacao.py` garante que todo arquivo Python compila.
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) em português, com escopo
   (ex.: `feat(ingestion): …`, `test(taxonomia): …`, `ci: …`, `docs: …`).
 - **Branches e PRs:** uma branch por funcionalidade (`feat/…`, `ci/…`, `docs/…`) e um PR para a `main`, com merge commit.
-- **Antes de abrir um PR:** rode os testes e, se mexer no front-end, confira o site em `--servir` no desktop e no celular.
+- **Antes de abrir um PR:** rode os testes e, se mexer no site, confira-o no desktop e no celular (veja `CONTRIBUTING.md`).
 
 ---
 
@@ -369,7 +316,7 @@ apps/web/     Next.js (TypeScript, Tailwind): o site que as pessoas usam
 apps/api/     FastAPI: tarefas de servidor (LLM com Groq, validação). Valida o JWT do Supabase. Ainda não é usada pelo site
 supabase/     migrations SQL (perfis, RLS, admins, palestrantes, artigos, trilhas, painel de administração)
 integrations/ aviso por e-mail dos formulários, via Google Apps Script
-ingestion/ enrichment/ trilhas/ app/   pipeline de coleta e geração de dados (e o site antigo)
+ingestion/ enrichment/ trilhas/ app/   pipeline de coleta e geração de dados
 ```
 
 O site fala **direto com o Supabase** usando a chave pública, e a RLS é a única fonte de autorização. Por isso o piloto roda só com
@@ -464,13 +411,12 @@ Para ampliar o conteúdo basta editar os três YAML (há testes que validam ids,
 ## Roadmap
 
 - [ ] Cadastrar o segredo `GROQ_API_KEY` no GitHub para as trilhas do site novo saírem organizadas pelo modelo (hoje saem por regras)
-- [ ] Ativar o GitHub Pages (o job de publicação do site antigo falha com 404 sem isso) ou aposentar o site antigo
 - [ ] Revisar os termos de uso da Gupy (ver acima)
 - [ ] Página de política de privacidade no site novo; preencher `PRIVACIDADE_*` e revisar com apoio jurídico
 - [ ] SMTP próprio para os e-mails de login
 - [ ] Trocar o token do Apps Script (o usado nos testes apareceu em conversa) e apagar os envios de teste
 - [ ] Revisar as trilhas geradas
-- [ ] Migrar as últimas telas do site antigo (perfil de competências) para o Next.js
+- [ ] Portar para o site novo o **perfil de competências** (as skills mais pedidas por área e nível); o código do site antigo está no histórico do Git
 - [ ] Avaliação manual de uma amostra (acurácia de senioridade, precisão e revocação das skills)
 - [ ] Conectores Greenhouse e Lever
 - [ ] Agente conversacional sobre os dados das vagas (adiado)

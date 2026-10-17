@@ -1,6 +1,6 @@
 """Garante que todo arquivo Python do projeto compila.
 
-Existe porque um erro de sintaxe em app/build_site.py chegou à main sem que nenhum teste percebesse: o arquivo não é
+Existe porque um erro de sintaxe em um arquivo que nenhum teste importava (o antigo app/build_site.py) chegou à main sem ser percebido: o arquivo não era
 importado pelos outros testes. Compilar tudo pega esse tipo de erro na hora, em qualquer arquivo.
 """
 

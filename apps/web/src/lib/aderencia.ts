@@ -1,4 +1,4 @@
-/** Aderência da pessoa às vagas. Porta a lógica do site antigo (app/web/app.js), em funções puras. */
+/** Aderência da pessoa às vagas. Porta a lógica do site antigo (aposentado; app/web/app.js no histórico do Git), em funções puras. */
 
 import { chaveSkill } from "./perfil.ts";
 import { AREAS, NOME_NIVEL, type Vaga } from "./rotulos.ts";

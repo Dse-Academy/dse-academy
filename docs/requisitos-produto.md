@@ -84,7 +84,7 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 | PROD-02 | Verificar os **termos de uso e o robots.txt da Gupy** antes de divulgar; plano B: exibir só título, empresa e link | CORRIGIR | P0 | pendência registrada no README; endereço usado é interno e já mudou uma vez | decisão registrada; plano B pronto | pendente |
 | PROD-03 | Canal para empresas pedirem remoção ou correção de uma vaga | CRIAR | P1 | só o relato de erro de quem usa | e-mail ou formulário com prazo de resposta | pendente |
 | PROD-04 | A coleta deve avisar quando vier vazia ou suspeita e manter o último conjunto de dados no ar | APERFEIÇOAR | P1 | trava `--minimo 200` existe; falha só gera e-mail do GitHub | alerta ativo; site nunca fica sem vagas | parcial |
-| PROD-05 | Definir uma **licença** de código aberto e os documentos da comunidade (`LICENSE`, `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`) | CRIAR | P0 | README: "licença ainda não definida" | arquivos na raiz; política de divulgação responsável de falhas | pendente |
+| PROD-05 | Definir uma **licença** de código aberto e os documentos da comunidade (`LICENSE`, `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`) | CRIAR | P0 | README: "licença ainda não definida" | arquivos na raiz; política de divulgação responsável de falhas | feito: MIT + `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md` e `CODE_OF_CONDUCT.md` (a licença pode ser trocada pela comunidade) |
 | PROD-06 | Autoria e uso de imagens da equipe e dos eventos confirmados | CORRIGIR | P0 | autorização ainda não confirmada | autorização registrada | pendente |
 
 ## 7. Operação e governança

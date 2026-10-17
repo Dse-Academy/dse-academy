@@ -19,9 +19,9 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 
 | ID | Requisito | Tipo | Pri. | Evidência | Critério de aceite | Estado |
 |---|---|---|---|---|---|---|
-| SEG-01 | O site deve enviar cabeçalhos de segurança (`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`/`frame-ancestors`) | CRIAR | P0 | a home só devolve `Strict-Transport-Security` | scanner de cabeçalhos com nota A; teste automatizado no CI | pendente |
+| SEG-01 | O site deve enviar cabeçalhos de segurança (`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`/`frame-ancestors`) | CRIAR | P0 | a home só devolve `Strict-Transport-Security` | scanner de cabeçalhos com nota A; teste automatizado no CI | feito: 5 cabeçalhos em todas as rotas, verificados em produção. CSP segue no SEG-02 |
 | SEG-02 | O site deve ter Content-Security-Policy (iniciar em modo `Report-Only`, depois impor) | CRIAR | P1 | não há CSP; o script de tema é inline e precisa de nonce | CSP imposta sem erros no console nas telas principais | pendente |
-| SEG-03 | Os formulários (artigo, palestrante e relato) devem **exigir login** e ter limite de envios por pessoa | CRIAR | P0 | hoje qualquer pessoa, logada ou não, insere sem limite | visitante vê o login em vez do formulário; o banco recusa `anon`; o 6º artigo em 24 h da mesma pessoa é recusado; teste de abuso no k6 passa | migration 009 validada em Postgres local (**falta aplicar**, depois de publicar a tela com login); tela com login pendente |
+| SEG-03 | Os formulários (artigo, palestrante e relato) devem **exigir login** e ter limite de envios por pessoa | CRIAR | P0 | hoje qualquer pessoa, logada ou não, insere sem limite | visitante vê o login em vez do formulário; o banco recusa `anon`; o 6º artigo em 24 h da mesma pessoa é recusado; teste de abuso no k6 passa | feito: tela com login e banco recusando `anon` (verificado em produção); limite por pessoa ativo. Anti-robô só se aparecer abuso; cenário de abuso no k6 entra no DESEMP-02 |
 | SEG-04 | O login deve ter proteção contra abuso: limites do Supabase Auth revisados, confirmação de e-mail, Redirect URLs sem curingas desnecessários, app do Google publicado | APERFEIÇOAR | P0 | confirmação ligada; app do Google em modo teste | tentativa de 20 logins/min é limitada; só URLs da lista funcionam | parcial |
 | SEG-05 | Segredos expostos devem ser rotacionados e haver política de rotação | CORRIGIR | P0 | token do Apps Script e outros apareceram em conversa | tokens novos em uso; antigos revogados; procedimento documentado | procedimento e varredura prontos; troca dos segredos expostos **dispensada por decisão da liderança (risco aceito, reavaliar em 17/04/2027)**; política de rotação segue valendo |
 | SEG-06 | Contas de admin devem ter MFA e toda ação administrativa deve ser registrada (quem, o quê, quando) | CRIAR | P1 | admin só por e-mail/Google; sem trilha de auditoria | TOTP obrigatório para `/admin`; tabela `auditoria_admin` preenchida por trigger | pendente |
@@ -48,7 +48,7 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 
 | ID | Requisito | Tipo | Pri. | Evidência | Critério de aceite | Estado |
 |---|---|---|---|---|---|---|
-| DISP-01 | O banco não pode pausar por inatividade | CRIAR | P0 | plano gratuito pausa após ~7 dias sem uso | rotina a cada 2 dias; banco nunca pausa | pendente |
+| DISP-01 | O banco não pode pausar por inatividade | CRIAR | P0 | plano gratuito pausa após ~7 dias sem uso | rotina a cada 2 dias; banco nunca pausa | feito: workflow diário `Anti-pausa do banco`, testado (HTTP 200) |
 | DISP-02 | **Backup** diário cifrado do banco, com **teste de restauração** mensal | CRIAR | P0 | plano gratuito sem backups | restauração em máquina limpa dentro do RTO | pendente |
 | DISP-03 | Deve haver **monitoramento** com alerta de indisponibilidade | CRIAR | P0 | ninguém é avisado se o site cair | alerta por e-mail em até 10 minutos | pendente |
 | DISP-04 | O front deve expor `/api/health` e a API `/health` | CRIAR | P1 | front sem endpoint; API tem `/health` | monitor consulta ambos | pendente |
@@ -61,7 +61,7 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 
 | ID | Requisito | Tipo | Pri. | Evidência | Critério de aceite | Estado |
 |---|---|---|---|---|---|---|
-| DESEMP-01 | Políticas RLS com `(select auth.uid())` e índices em `user_id` | APERFEIÇOAR | P0 | `auth.uid()` por linha; sem índice em `user_id` de artigos e palestrantes | 22 políticas reescritas; 3 índices criados | migration 009 validada, **falta aplicar** |
+| DESEMP-01 | Políticas RLS com `(select auth.uid())` e índices em `user_id` | APERFEIÇOAR | P0 | `auth.uid()` por linha; sem índice em `user_id` de artigos e palestrantes | 22 políticas reescritas; 3 índices criados | feito: migration 009 aplicada em produção (gatilho verificado); políticas e índices validados no Postgres embutido |
 | DESEMP-02 | **Teste de carga** versionado (k6) antes da divulgação | CRIAR | P0 | inexistente | cenários do plano passam: p95 ≤ 300 ms, 5xx < 0,5% | pendente |
 | DESEMP-03 | Reduzir as chamadas ao banco por carga de página logada (hoje ~5) para 1 | APERFEIÇOAR | P1 | sessão, perfil, vagas salvas, `is_admin` e inscrições em separado | uma função `minha_conta()` devolve tudo | pendente |
 | DESEMP-04 | Medir e manter Web Vitals (LCP, INP, CLS) | CRIAR | P1 | sem medição | Lighthouse no CI com orçamento mínimo | pendente |
@@ -84,7 +84,7 @@ Resumo: **49 requisitos**, dos quais **20 são P0**.
 | PROD-02 | Verificar os **termos de uso e o robots.txt da Gupy** antes de divulgar; plano B: exibir só título, empresa e link | CORRIGIR | P0 | pendência registrada no README; endereço usado é interno e já mudou uma vez | decisão registrada; plano B pronto | pendente |
 | PROD-03 | Canal para empresas pedirem remoção ou correção de uma vaga | CRIAR | P1 | só o relato de erro de quem usa | e-mail ou formulário com prazo de resposta | pendente |
 | PROD-04 | A coleta deve avisar quando vier vazia ou suspeita e manter o último conjunto de dados no ar | APERFEIÇOAR | P1 | trava `--minimo 200` existe; falha só gera e-mail do GitHub | alerta ativo; site nunca fica sem vagas | parcial |
-| PROD-05 | Definir uma **licença** de código aberto e os documentos da comunidade (`LICENSE`, `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`) | CRIAR | P0 | README: "licença ainda não definida" | arquivos na raiz; política de divulgação responsável de falhas | feito: MIT + `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md` e `CODE_OF_CONDUCT.md` (a licença pode ser trocada pela comunidade) |
+| PROD-05 | Definir uma **licença** de código aberto e os documentos da comunidade (`LICENSE`, `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`) | CRIAR | P0 | README: "licença ainda não definida" | arquivos na raiz; política de divulgação responsável de falhas | feito: MIT confirmada pela liderança; `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md` e `CODE_OF_CONDUCT.md`. Falta ativar o relato privado de vulnerabilidades no GitHub |
 | PROD-06 | Autoria e uso de imagens da equipe e dos eventos confirmados | CORRIGIR | P0 | autorização ainda não confirmada | autorização registrada | pendente |
 
 ## 7. Operação e governança

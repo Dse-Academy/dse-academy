@@ -18,7 +18,6 @@ import http.server
 import json
 import os
 import shutil
-import urllib.parse
 import webbrowser
 from pathlib import Path
 
@@ -68,16 +67,13 @@ class _HandlerSPA(http.server.SimpleHTTPRequestHandler):
     """
 
     def send_head(self):
-        rota, _, query = self.path.partition("?")
+        rota = self.path.partition("?")[0]
         if not Path(self.translate_path(rota)).exists() and not Path(rota).suffix:
             print(f"  caminho inexistente {rota!r} -> redirecionando para /")
             self.send_response(302)
-            # A query volta no cabeçalho Location: reescapa para nunca carregar quebra de linha (separação de resposta HTTP).
-            # Remove qualquer CR/LF (também os decodificados de %0d%0a) antes de reescapar o resto.
-            sem_quebras = urllib.parse.unquote(query).replace("", "").replace("
-", "")
-            seguro = urllib.parse.quote(sem_quebras, safe="=&,;:@/+")
-            self.send_header("Location", "/" + (f"?{seguro}" if seguro else ""))
+            # Servidor só de desenvolvimento: volta sempre para "/", sem repetir a query da requisição no cabeçalho Location
+            # (assim nenhum dado da requisição vai parar num cabeçalho de resposta).
+            self.send_header("Location", "/")
             self.end_headers()
             return None
         return super().send_head()

@@ -1,4 +1,4 @@
-/** Rótulos e tipos das vagas. Os ids são os mesmos do pipeline (enrichment/) e do site atual (app/web/app.js). */
+/** Rótulos e tipos das vagas. Os ids são os mesmos do pipeline (enrichment/) e do site antigo, já aposentado (app/web/app.js no histórico do Git). */
 
 export const NIVEIS = [
   ["entrada", "Entrada"],

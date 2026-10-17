@@ -12,7 +12,7 @@ Antes de começar, leia o [Código de conduta](CODE_OF_CONDUCT.md). Para falhas 
 | `apps/web/` | o site (Next.js, TypeScript, Tailwind) |
 | `apps/api/` | API (FastAPI), ainda não usada pelo site |
 | `supabase/migrations/` | banco de dados: tabelas, regras de acesso (RLS) e funções |
-| `ingestion/`, `enrichment/`, `trilhas/`, `app/` | coleta de vagas, taxonomia, geração das trilhas e o site antigo |
+| `ingestion/`, `enrichment/`, `trilhas/`, `app/` | coleta de vagas, taxonomia, geração das trilhas e dos dados do site |
 | `integrations/apps-script/` | aviso por e-mail e Agenda dos formulários |
 | `docs/` | requisitos, plano de escala, rotação de segredos |
 

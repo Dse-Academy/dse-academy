@@ -1,14 +1,14 @@
 """Monta os dados do portal: vagas da coleta mais recente, stacks por palavra-chave e
 enriquecimento com LLM (quando houver).
 
-A busca, os filtros e o perfil de competências rodam no navegador (app/web/app.js) sobre
-o JSON gerado aqui; este módulo não depende de nenhuma biblioteca de interface.
+O site (apps/web) lê o JSON gerado a partir daqui por `app/exportar_json.py`; este módulo
+não depende de nenhuma biblioteca de interface.
 """
 
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from enrichment.extractor import classificar_area, senioridade_explicita
@@ -77,42 +77,3 @@ def montar_vagas(
             "salario": [x.get("salario_min"), x.get("salario_max")] if x.get("salario_min") or x.get("salario_max") else None,
         })
     return vagas
-
-
-def _script(variavel: str, conteudo) -> str:
-    """Script JS com JSON compacto: funciona abrindo o HTML direto do disco (file://), sem fetch."""
-    return f"window.{variavel} = " + json.dumps(conteudo, ensure_ascii=False, separators=(",", ":")) + ";\n"
-
-
-def exportar(destino: Path, dir_raw: Path = DIR_RAW, dir_enriquecido: Path = DIR_ENRIQUECIDO) -> dict:
-    """Grava `destino` (dados.js, window.DADOS) e, ao lado, descricoes.js (window.DESCRICOES).
-
-    As descrições são ~85% do volume e só são necessárias na página da vaga e na busca por
-    texto completo; por isso ficam num arquivo separado que o site carrega depois da primeira
-    renderização. dados.js fica com o necessário para busca, filtros e perfis.
-    """
-    arquivo = ultimo_bruto(dir_raw)
-    coletada_em = datetime.fromtimestamp(arquivo.stat().st_mtime, timezone.utc)
-    enriquecimentos = carregar_enriquecimentos(dir_enriquecido) if dir_enriquecido.exists() else {}
-    taxonomia = Taxonomia.carregar()
-    vagas = montar_vagas(json.loads(arquivo.read_text(encoding="utf-8")), enriquecimentos, coletada_em, taxonomia)
-    descricoes = {v["id"]: v.pop("descricao") for v in vagas}
-
-    dados = {
-        "coletada_em": coletada_em.isoformat(),
-        "skills": {s.id: s.nome for s in taxonomia.skills.values()},
-        "sinonimos": taxonomia.indice(),  # chaves no formato de chave_skill (o JS replica a função)
-        "pais": {s.id: s.pai for s in taxonomia.skills.values() if s.pai},  # quem sabe Glue também sabe AWS
-        "vagas": vagas,
-    }
-    destino.parent.mkdir(parents=True, exist_ok=True)
-    destino.write_text(_script("DADOS", dados), encoding="utf-8")
-    arquivo_descricoes = destino.with_name("descricoes.js")
-    arquivo_descricoes.write_text(_script("DESCRICOES", descricoes), encoding="utf-8")
-    return {
-        "vagas": len(vagas),
-        "com_stacks": sum(bool(v["citadas"]) for v in vagas),
-        "enriquecidas": sum(v["enriquecida"] for v in vagas),
-        "kb_dados": destino.stat().st_size // 1024,
-        "kb_descricoes": arquivo_descricoes.stat().st_size // 1024,
-    }

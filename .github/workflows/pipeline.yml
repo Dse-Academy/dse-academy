@@ -1,22 +1,19 @@
-# Coleta semanal de vagas e publicação do portal no GitHub Pages.
+# Coleta semanal de vagas e atualização dos dados do site (apps/web).
 #
-# Configuração no GitHub (uma vez):
-#   Settings > Pages > Source: GitHub Actions
-#   Settings > Secrets and variables > Actions > Variables:
-#     SUPABASE_URL, SUPABASE_ANON_KEY (chave publishable: é pública por design)
-#     PRIVACIDADE_RESPONSAVEL, PRIVACIDADE_CONTATO, PRIVACIDADE_REGIAO_DADOS
-#     (exibidas na política de privacidade; vazias aparecem como "[a definir]")
+# 1. job "coletar": roda os testes, coleta as vagas da Gupy e guarda o JSON bruto como artefato (90 dias).
+# 2. job "dados-do-site-novo": regenera apps/web/data/ (vagas e trilhas) a partir da coleta e commita no main.
+#    A Vercel publica o site sozinha a cada commit. Opcional: o segredo GROQ_API_KEY (Settings > Secrets > Actions)
+#    faz o modelo aberto organizar as trilhas; sem ele, as trilhas saem por regras.
 #
-# Além do site antigo (GitHub Pages), o job "dados-do-site-novo" regenera apps/web/data/ (vagas e trilhas do site novo)
-# e commita no main: a Vercel publica sozinha a cada commit. Opcional: o segredo GROQ_API_KEY (Settings > Secrets > Actions)
-# faz o modelo aberto organizar as trilhas; sem ele, as trilhas saem por regras.
+# O site antigo (HTML/JS estático, publicado no GitHub Pages) foi aposentado: o site novo cobre todas as funcionalidades.
+# O código dele continua no histórico do Git.
 #
-# Proteção da main: quando a main exige PR e checks verdes, o commit de dados precisa de uma identidade com bypass.
+# Proteção da main: a main exige PR e checks verdes, então o commit de dados precisa de uma identidade com bypass.
 # O job usa a chave de deploy do secret DEPLOY_KEY (permitida como bypass na regra da main). Sem o secret, o checkout
-# cai no GITHUB_TOKEN, que só consegue gravar enquanto a main NÃO exige PR.
+# cai no GITHUB_TOKEN, que não tem permissão de escrita aqui e o commit seria recusado.
 #
-# Se a coleta vier suspeita (poucas vagas) ou os testes falharem, nada é publicado:
-# o site anterior continua no ar e o GitHub avisa por e-mail.
+# Se a coleta vier suspeita (poucas vagas) ou os testes falharem, nada é atualizado:
+# o site continua com os dados anteriores e o GitHub avisa por e-mail.
 
 name: Coleta e publicação
 
@@ -28,16 +25,14 @@ on:
   workflow_dispatch: # botão "Run workflow" na aba Actions
 
 permissions:
-  contents: write # o job dados-do-site-novo commita apps/web/data/
-  pages: write
-  id-token: write
+  contents: read # o commit de dados usa a chave de deploy, não o GITHUB_TOKEN
 
 concurrency:
-  group: pages
+  group: coleta
   cancel-in-progress: false
 
 jobs:
-  coletar-e-construir:
+  coletar:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -64,38 +59,14 @@ jobs:
           path: data/raw/
           retention-days: 90
 
-      - name: Gerar o site
-        env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-          AUTH_PROVEDORES: ${{ vars.AUTH_PROVEDORES }}
-          PRIVACIDADE_RESPONSAVEL: ${{ vars.PRIVACIDADE_RESPONSAVEL }}
-          PRIVACIDADE_CONTATO: ${{ vars.PRIVACIDADE_CONTATO }}
-          PRIVACIDADE_REGIAO_DADOS: ${{ vars.PRIVACIDADE_REGIAO_DADOS }}
-        run: python -m app.build_site
-
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: site/
-
-  publicar:
-    needs: coletar-e-construir
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v5
-
   dados-do-site-novo:
-    needs: coletar-e-construir
+    needs: coletar
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
-          # Vazio (secret ausente) = usa o GITHUB_TOKEN. Com a chave, o push vai por SSH e passa pela exceção da regra da main.
+          # A chave de deploy permite o push na main protegida (exceção da regra). Sem o secret, usa o GITHUB_TOKEN.
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - uses: actions/setup-python@v7

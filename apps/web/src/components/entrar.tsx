@@ -19,7 +19,8 @@ function LogoGoogle() {
 }
 
 /** Login por link no e-mail (sem senha) ou com a conta Google. O link volta para `voltarPara` (padrão: /perfil, que leva ao onboarding no primeiro acesso). */
-export function Entrar({ titulo = "Criar meu perfil", texto, voltarPara = "/perfil" }: { titulo?: string; texto?: string; voltarPara?: string }) {
+/** `cabecalho={false}` esconde o título e o texto: usado dentro de outra página que já tem o seu (ex.: o portão dos formulários). */
+export function Entrar({ titulo = "Criar meu perfil", texto, voltarPara = "/perfil", cabecalho = true }: { titulo?: string; texto?: string; voltarPara?: string; cabecalho?: boolean }) {
   const [email, setEmail] = useState("");
   const [fase, setFase] = useState<"preenchendo" | "enviando" | "enviado">("preenchendo");
   const [erro, setErro] = useState<string | null>(null);
@@ -51,10 +52,14 @@ export function Entrar({ titulo = "Criar meu perfil", texto, voltarPara = "/perf
 
   return (
     <>
-      <h1 className="font-display text-3xl font-bold text-titulo">{titulo}</h1>
-      <p className="mt-2 max-w-2xl text-suave">
-        {texto ?? "Entre com a sua conta Google ou receba um link de acesso no e-mail. Na primeira vez, o perfil é criado por você aqui mesmo."}
-      </p>
+      {cabecalho && (
+        <>
+        <h1 className="font-display text-3xl font-bold text-titulo">{titulo}</h1>
+        <p className="mt-2 max-w-2xl text-suave">
+          {texto ?? "Entre com a sua conta Google ou receba um link de acesso no e-mail. Na primeira vez, o perfil é criado por você aqui mesmo."}
+        </p>
+        </>
+      )}
       {fase === "enviado" ? (
         <div role="status" className="mt-6 rounded-2xl border border-borda bg-superficie p-6">
           <h2 className="font-display text-xl font-semibold text-titulo">Confira seu e-mail</h2>

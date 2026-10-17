@@ -1,0 +1,47 @@
+# Auditoria de dependências (requisito SEG-08).
+#   - npm: dependências de PRODUÇÃO do site; falha se houver vulnerabilidade de nível high ou critical.
+#   - npm (ferramentas de desenvolvimento): só informa; não vão para o site e costumam ser corrigidas pelo Dependabot.
+#   - Python: pip-audit nas dependências da coleta e da API; falha se houver vulnerabilidade conhecida.
+# Roda em PRs, toda semana e sob demanda. Não é um check obrigatório da main, para uma vulnerabilidade descoberta hoje em uma
+# dependência antiga não travar todos os PRs; a falha aparece em vermelho e vira tarefa.
+name: Auditoria de dependências
+
+on:
+  pull_request:
+  schedule:
+    - cron: "41 5 * * 1" # segunda, 05:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Dependências de produção (bloqueia em high ou critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Ferramentas de desenvolvimento (só informa)
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt -r apps/api/requirements.txt

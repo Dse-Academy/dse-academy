@@ -1,0 +1,37 @@
+# Atualizações automáticas de dependências (requisito SEG-08).
+# O Dependabot abre PRs semanais; cada PR passa pelo CI e é mesclado por uma pessoa. Atualizações menores e de correção ficam
+# agrupadas num PR só por ecossistema (menos ruído); atualizações maiores (major) vêm separadas, porque podem quebrar.
+# As correções de SEGURANÇA continuam chegando na hora, independentemente deste calendário.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/apps/web"
+    schedule: { interval: "weekly", day: "monday", time: "06:00", timezone: "America/Sao_Paulo" }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore(deps)" }
+    groups:
+      menores-e-correcoes: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule: { interval: "weekly", day: "monday", time: "06:00", timezone: "America/Sao_Paulo" }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore(deps)" }
+    groups:
+      menores-e-correcoes: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "pip"
+    directory: "/apps/api"
+    schedule: { interval: "weekly", day: "monday", time: "06:00", timezone: "America/Sao_Paulo" }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore(deps)" }
+    groups:
+      menores-e-correcoes: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: { interval: "weekly", day: "monday", time: "06:00", timezone: "America/Sao_Paulo" }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: "chore(ci)" }
+    groups:
+      actions: { update-types: ["minor", "patch"] }

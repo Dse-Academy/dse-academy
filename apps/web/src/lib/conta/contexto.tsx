@@ -20,6 +20,8 @@ export type ValorConta = EstadoConta & {
   alternarSalva: (vaga: ResumoDeVaga) => Promise<boolean>; // devolve true se salvou, false se removeu; lança erro se o banco recusar
   sair: () => Promise<void>;
   excluirConta: () => Promise<void>;
+  /** Baixa os dados da pessoa (JSON); lança erro se não der. */
+  exportarDados: () => Promise<Record<string, unknown>>;
 };
 
 const Contexto = createContext<ValorConta | null>(null);
@@ -99,14 +101,19 @@ export function ContaProvider({ children }: { children: ReactNode }) {
     enviar({ tipo: "visitante" });
   }, [backend]);
 
+  const exportarDados = useCallback(async () => {
+    if (!backend) throw new Error("É preciso entrar na conta.");
+    return backend.exportarDados();
+  }, [backend]);
+
   const valor = useMemo<ValorConta>(() => ({
     ...estado,
     disponivel: backend !== null,
     habilidades: habilidadesDe(estado),
     precisaDeOnboarding: precisaDeOnboarding(estado),
     estaSalva: (vagaId) => estaSalva(estado.salvas, vagaId),
-    gravarPerfil, alternarSalva, sair, excluirConta,
-  }), [estado, backend, gravarPerfil, alternarSalva, sair, excluirConta]);
+    gravarPerfil, alternarSalva, sair, excluirConta, exportarDados,
+  }), [estado, backend, gravarPerfil, alternarSalva, sair, excluirConta, exportarDados]);
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }

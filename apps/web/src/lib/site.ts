@@ -27,6 +27,7 @@ export function montarSitemap(base: string, slugsDeVagas: string[], idsDeTrilhas
     { url: `${base}/palestrantes/cadastro`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${base}/contato`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${base}/privacidade`, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${base}/termos`, changeFrequency: "monthly", priority: 0.3 },
   ];
   const vagas = slugsDeVagas.map((s) => ({ url: `${base}/vagas/${encodeURIComponent(s)}`, lastModified: data, changeFrequency: "weekly" as const, priority: 0.6 }));
   const trilhas = idsDeTrilhas.map((id) => ({ url: `${base}/trilhas/${encodeURIComponent(id)}`, changeFrequency: "monthly" as const, priority: 0.6 }));

@@ -5,15 +5,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { ContaProvider } from "@/lib/conta/contexto";
 import { LINKEDIN_URL, LINKTREE_URL } from "@/lib/contato";
+import { urlDoSite } from "@/lib/site";
 import { AlternarTema } from "./alternar-tema";
 import "./globals.css";
 
 const saira = Saira({ variable: "--font-saira", subsets: ["latin"], weight: ["500", "600", "700"] });
 const plex = IBM_Plex_Sans({ variable: "--font-plex", subsets: ["latin"], weight: ["400", "500", "600"] });
 
+const DESCRICAO = "Comunidade DSE Academy: vagas de engenharia, análise, ciência de dados e ML no Brasil, artigos e palestrantes.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(urlDoSite()),
   title: { default: "DSE Academy · Vagas, artigos e palestrantes em dados", template: "%s · DSE Academy" },
-  description: "Comunidade DSE Academy: vagas de engenharia, análise, ciência de dados e ML no Brasil, artigos e palestrantes.",
+  description: DESCRICAO,
+  // "./" faz cada página apontar para o próprio endereço como canônico (sem parâmetros de busca).
+  alternates: { canonical: "./" },
+  openGraph: {
+    type: "website",
+    siteName: "DSE Academy",
+    locale: "pt_BR",
+    title: "DSE Academy · Vagas, artigos e palestrantes em dados",
+    description: DESCRICAO,
+    images: [{ url: "/logo.png", width: 256, height: 256, alt: "DSE Academy" }],
+  },
+  twitter: { card: "summary", title: "DSE Academy", description: DESCRICAO, images: ["/logo.png"] },
 };
 
 // Roda antes da primeira pintura (evita o "flash" do tema errado): usa a escolha salva ou, se não houver, a do sistema.
@@ -61,6 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/#sobre-nos" className="text-link underline">Sobre nós</Link>
               <Link href="/contato" className="text-link underline">Fale conosco</Link>
               <Link href="/privacidade" className="text-link underline">Privacidade</Link>
+              <Link href="/termos" className="text-link underline">Termos de uso</Link>
               <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" className="text-link underline">DSE Community no LinkedIn</a>
               <a href={LINKTREE_URL} target="_blank" rel="noopener noreferrer" className="text-link underline">Linktree</a>
             </p>

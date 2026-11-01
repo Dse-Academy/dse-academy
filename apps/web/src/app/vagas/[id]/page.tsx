@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { demandaNaArea, stacksDaVaga } from "@/lib/aderencia";
 import { passosDasStacks, trilhaDaArea } from "@/lib/ligacao-trilhas";
 import { AREAS, CONTRATOS, MODELOS, NOME_NIVEL, haQuanto, localDaVaga, slugDaVaga } from "@/lib/rotulos";
+import { paraCompartilhar } from "@/lib/site";
 import { carregarTrilhas } from "@/lib/trilhas";
 import { carregarVagas, descricaoDe } from "@/lib/vagas";
 import { BotaoSalvar } from "./botao-salvar";
@@ -24,10 +25,9 @@ function acharVaga(slug: string) {
 export async function generateMetadata(props: PageProps<"/vagas/[id]">): Promise<Metadata> {
   const { vaga } = acharVaga((await props.params).id);
   if (!vaga) return { title: "Vaga não encontrada" };
-  return {
-    title: `${vaga.titulo} · ${vaga.empresa}`,
-    description: `${vaga.titulo} na ${vaga.empresa}, ${localDaVaga(vaga)}.`,
-  };
+  const titulo = `${vaga.titulo} · ${vaga.empresa}`;
+  const descricao = `${vaga.titulo} na ${vaga.empresa}, ${localDaVaga(vaga)}.`;
+  return { title: titulo, description: descricao, ...paraCompartilhar(titulo, descricao) };
 }
 
 export default async function Pagina(props: PageProps<"/vagas/[id]">) {

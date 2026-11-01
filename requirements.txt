@@ -1,5 +1,5 @@
 httpx
-pydantic>=2.14.1
+pydantic>=2.14.2
 pyyaml
 google-genai
 python-dotenv

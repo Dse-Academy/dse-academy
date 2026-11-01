@@ -7,6 +7,9 @@ import { EMAIL_CONTATO } from "./contato.ts";
  */
 export const VERSAO_POLITICA = "2026-10-17";
 
+/** Versão dos Termos de Uso em vigor (AAAA-MM-DD). Mude quando o texto de /termos mudar de forma relevante. */
+export const VERSAO_TERMOS = "2026-11-01";
+
 /** Quem responde pelos dados (controlador). Pode ser ajustado sem mexer no código pela variável de ambiente. */
 export const RESPONSAVEL_PELOS_DADOS =
   process.env.NEXT_PUBLIC_PRIVACIDADE_RESPONSAVEL || "DSE Academy (comunidade DSE, Data Science Engineering Community)";

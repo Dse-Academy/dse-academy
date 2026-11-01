@@ -113,7 +113,7 @@ export default function Pagina() {
       <p className={P}>
         Usamos apenas o armazenamento do navegador que é <strong>essencial</strong>: manter a sua sessão depois do login,
         lembrar o tema claro ou escuro e lembrar quais vagas você já relatou. Não há cookies de publicidade nem de rastreamento
-        entre sites. Você pode limpar esses dados nas configurações do navegador; isso apenas encerra a sua sessão.
+        entre sites. Você pode limpar esses dados nas configurações do navegador; isso apenas encerra a sua sessão. As regras de uso do portal estão nos <Link href="/termos" className="text-link underline">Termos de Uso</Link>.
       </p>
 
       <h2 className={H2} id="seguranca">8. Como protegemos os dados</h2>

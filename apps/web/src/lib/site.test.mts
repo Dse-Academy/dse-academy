@@ -15,12 +15,16 @@ test("sem SITE_URL usa o domínio de produção da Vercel, e por fim o endereço
 test("o sitemap lista páginas fixas, vagas e trilhas, sem áreas privadas", () => {
   const s = montarSitemap("https://x.org", ["a-1", "b c"], ["engenharia_dados"], "2026-10-30T11:09:01Z");
   const urls = s.map((e) => e.url);
-  assert.ok(urls.includes("https://x.org/"));
-  assert.ok(urls.includes("https://x.org/vagas/a-1"));
-  assert.ok(urls.includes("https://x.org/vagas/b%20c"));
-  assert.ok(urls.includes("https://x.org/trilhas/engenharia_dados"));
-  assert.equal(new Set(urls).size, urls.length);
-  for (const caminho of CAMINHOS_PRIVADOS) assert.ok(!urls.some((u) => u.includes(caminho.replace(/\/$/, ""))), caminho);
+  const conjunto = new Set(urls);
+  for (const esperado of ["https://x.org/", "https://x.org/vagas/a-1", "https://x.org/vagas/b%20c", "https://x.org/trilhas/engenharia_dados"]) {
+    assert.ok(conjunto.has(esperado), esperado);
+  }
+  assert.equal(conjunto.size, urls.length);
+  const caminhos = urls.map((u) => new URL(u).pathname);
+  for (const privado of CAMINHOS_PRIVADOS) {
+    const prefixo = privado.replace(/\/$/, "");
+    assert.ok(!caminhos.some((c) => c === prefixo || c.startsWith(`${prefixo}/`)), privado);
+  }
 });
 
 test("data inválida de coleta não quebra o sitemap", () => {

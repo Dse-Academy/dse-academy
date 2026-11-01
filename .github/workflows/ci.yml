@@ -57,3 +57,20 @@ jobs:
         with:
           node-version: 24
       - run: node --test integrations/apps-script/notificar-submissoes.test.mjs
+
+  # Regras de acesso do banco (RLS) e limites de envio: aplica todas as migrations num Postgres embutido (PGlite) e falha se
+  # alguém passar a ler dado de outra pessoa, aceitar envio anônimo ou criar tabela sem RLS (requisito SEG-07).
+  banco:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/banco
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tests/banco/package-lock.json
+      - run: npm ci
+      - run: npm test

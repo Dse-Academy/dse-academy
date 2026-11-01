@@ -1,0 +1,8 @@
+{
+  "name": "testes-do-banco",
+  "private": true,
+  "description": "Testes das regras de acesso (RLS) e dos limites do banco, num Postgres embutido (PGlite).",
+  "type": "module",
+  "scripts": { "test": "node --test rls.test.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.3.15" }
+}

@@ -84,6 +84,19 @@ for (let i = 1; i <= 35; i++) {
 }
 console.log(`relatos da pessoa A: recusou a partir do nº ${recusouRelato} (esperado 31)`);
 
+// 5b) versão da política aceita (migration 010): data válida entra; formato inválido é recusado; omitir continua funcionando
+const comVersao = (n, versao) => `insert into public.submissoes_artigos (nome,email,bio,titulo,resumo,tags,link_rascunho,aceite_lgpd,aceite_direitos,user_id,versao_politica)
+  values ('Ana','a@x.com','bio de teste com mais de vinte caracteres','Titulo ${n}','resumo de teste com mais de vinte caracteres','{x}','https://x.com/${n}',true,true,'${C}',${versao === null ? "null" : `'${versao}'`})`;
+console.log(await como("authenticated", C, () => tenta("artigo com versão 2026-10-17", () => db.exec(comVersao(900, "2026-10-17")))));
+console.log(await como("authenticated", C, () => tenta("artigo com versão fora do formato (hoje)", () => db.exec(comVersao(901, "hoje")))));
+console.log(await como("authenticated", C, () => tenta("artigo sem versão (aceite anterior ao registro)", () => db.exec(comVersao(902, null)))));
+const salvas = (await db.query("select versao_politica from public.submissoes_artigos where titulo = 'Titulo 900'")).rows[0];
+console.log("versão gravada no artigo 900:", salvas?.versao_politica, "(esperado 2026-10-17)");
+const pal = (versao) => `insert into public.palestrantes (nome,email,bio,temas,formatos,modalidade,aceite_lgpd,user_id,versao_politica)
+  values ('Bia','b@x.com','bio de teste com mais de vinte caracteres','{x}','{palestra}','remoto',true,'${C}','${versao}')`;
+console.log(await como("authenticated", C, () => tenta("palestrante com versão 2026-10-17", () => db.exec(pal("2026-10-17")))));
+console.log(await como("authenticated", C, () => tenta("palestrante com versão inválida", () => db.exec(pal("17/10/2026")))));
+
 // 6) índices e funções existem
 const idx = (await db.query(`select indexname from pg_indexes where schemaname='public' and indexname like '%user_criado' order by 1`)).rows.map((r) => r.indexname);
 console.log("índices:", idx.join(", "));

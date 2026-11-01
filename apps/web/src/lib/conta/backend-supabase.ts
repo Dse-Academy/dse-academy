@@ -48,6 +48,12 @@ export function criarBackendSupabase(): ContaBackend {
       if (error) throw error;
     },
 
+    async exportarDados() {
+      const { data, error } = await supabaseNoNavegador().rpc("exportar_meus_dados");
+      if (error) throw error;
+      return data as Record<string, unknown>;
+    },
+
     async excluirConta() {
       const sb = supabaseNoNavegador();
       const { error } = await sb.rpc("excluir_minha_conta");

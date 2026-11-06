@@ -1,5 +1,6 @@
 /** Regras do envio de artigos. Espelham os checks de supabase/migrations/005_submissoes_artigos.sql. */
 
+import { VERSAO_POLITICA } from "./privacidade.ts";
 import { lista, normalizarLink } from "./texto.ts";
 
 export const IDIOMAS_ARTIGO = [
@@ -44,6 +45,8 @@ export type LinhaArtigo = {
   data_desejada: string | null;
   aceite_lgpd: boolean;
   aceite_direitos: boolean;
+  /** Versão da Política de Privacidade em vigor no momento do aceite (PRIV-03). */
+  versao_politica: string;
 };
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -93,5 +96,6 @@ export function paraLinha(a: EnvioArtigo): LinhaArtigo {
     data_desejada: vazioParaNulo(a.dataDesejada),
     aceite_lgpd: a.aceiteLgpd,
     aceite_direitos: a.aceiteDireitos,
+    versao_politica: VERSAO_POLITICA,
   };
 }

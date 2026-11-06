@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { paraLinha, validar, type EnvioArtigo } from "./artigos.ts";
+import { VERSAO_POLITICA } from "./privacidade.ts";
 
 const valido: EnvioArtigo = {
   nome: "Ana Souza", email: "ana@exemplo.com", perfilMedium: "medium.com/@ana", linkedin: "", bio: "Engenheira de dados há 8 anos, escrevo sobre plataformas.",
@@ -16,6 +17,11 @@ test("envio válido passa e vira linha do banco", () => {
   assert.deepEqual(l.tags, ["Spark", "Data Engineering"]);
   assert.equal(l.subtitulo, null);
   assert.equal(l.data_desejada, null);
+});
+
+test("todo envio de artigo registra a versão da política aceita (PRIV-03)", () => {
+  assert.equal(paraLinha(valido).versao_politica, VERSAO_POLITICA);
+  assert.match(paraLinha(valido).versao_politica, /^\d{4}-\d{2}-\d{2}$/);
 });
 
 test("rejeita o que o banco rejeitaria", () => {

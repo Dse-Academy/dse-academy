@@ -8,10 +8,10 @@ import { Carregando, Erro, SELECT } from "../ui";
 type Palestrante = {
   id: string; nome: string; email: string; cargo: string | null; empresa: string | null; bio: string; linkedin: string | null;
   temas: string[]; formatos: string[]; modalidade: string; cidade: string | null; uf: string | null;
-  aceite_publicacao: boolean; status: string; criado_em: string;
+  aceite_publicacao: boolean; status: string; criado_em: string; versao_politica: string | null;
 };
 
-const COLUNAS = "id,nome,email,cargo,empresa,bio,linkedin,temas,formatos,modalidade,cidade,uf,aceite_publicacao,status,criado_em";
+const COLUNAS = "id,nome,email,cargo,empresa,bio,linkedin,temas,formatos,modalidade,cidade,uf,aceite_publicacao,status,criado_em,versao_politica";
 
 export default function PalestrantesAdmin() {
   const [itens, setItens] = useState<Palestrante[] | null>(null);
@@ -76,7 +76,7 @@ export default function PalestrantesAdmin() {
               <p className="mt-2 text-tinta">{p.bio}</p>
               <p className="mt-2 text-sm text-suave">
                 Temas: {p.temas.join(", ")} · Formatos: {p.formatos.join(", ")} · {p.modalidade}
-                {p.cidade ? ` · ${p.cidade}${p.uf ? `/${p.uf}` : ""}` : ""} · {p.aceite_publicacao ? "autoriza aparecer no site" : "não autorizou aparecer no site"}
+                {p.cidade ? ` · ${p.cidade}${p.uf ? `/${p.uf}` : ""}` : ""} · {p.aceite_publicacao ? "autoriza aparecer no site" : "não autorizou aparecer no site"} · política aceita: {p.versao_politica ?? "anterior ao registro de versão"}
               </p>
               {p.linkedin && <p className="mt-2 text-sm"><a href={p.linkedin} target="_blank" rel="noopener noreferrer" className="text-link underline">LinkedIn</a></p>}
             </li>

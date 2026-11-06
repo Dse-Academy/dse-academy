@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { lista, normalizarLink, paraLinha, validar, type CadastroPalestrante } from "./palestrantes.ts";
+import { VERSAO_POLITICA } from "./privacidade.ts";
 
 const valido: CadastroPalestrante = {
   nome: "Ana Souza", email: "ana@exemplo.com", cargo: "", empresa: "", bio: "Engenheira de dados há 8 anos, foco em plataformas.",
@@ -25,6 +26,10 @@ test("cadastro válido passa e vira linha do banco", () => {
   assert.equal(l.linkedin, "https://linkedin.com/in/ana");
   assert.equal(l.cargo, null);
   assert.deepEqual(l.temas, ["Spark", "dbt", "Qualidade de dados"]);
+});
+
+test("todo cadastro de palestrante registra a versão da política aceita (PRIV-03)", () => {
+  assert.equal(paraLinha(valido).versao_politica, VERSAO_POLITICA);
 });
 
 test("rejeita o que o banco rejeitaria", () => {

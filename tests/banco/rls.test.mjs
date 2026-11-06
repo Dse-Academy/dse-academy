@@ -254,3 +254,43 @@ describe("exclusão de conta (LGPD)", () => {
     assert.equal(await contar("vagas_salvas", `user_id = '${ANA}'`), 1, "os dados da Ana continuam");
   });
 });
+
+describe("exportar meus dados (portabilidade)", () => {
+  test("anônimo não executa", async () => {
+    await anonimo(() => recusa(db.query("select public.exportar_meus_dados()")));
+  });
+
+  test("a pessoa recebe só os próprios dados, de todas as áreas, sem o user_id", async () => {
+    const dados = (await ana(() => db.query("select public.exportar_meus_dados() d"))).rows[0].d;
+    assert.equal(dados.conta.id, ANA);
+    assert.equal(dados.perfil.nome, "Ana");
+    assert.equal(dados.vagas_salvas.length, 1);
+    assert.equal(dados.vagas_salvas[0].titulo, "Vaga da Ana");
+    assert.equal(dados.trilhas.length, 1);
+    assert.ok(dados.artigos_enviados.length >= 1, "os artigos enviados entram");
+    assert.ok(dados.relatos_de_vaga.length >= 1, "os relatos entram, mesmo a pessoa não podendo lê-los pela RLS");
+    assert.ok(!JSON.stringify(dados).includes('"user_id"'), "sem user_id em lugar nenhum");
+    for (const lista of ["vagas_salvas", "trilhas", "artigos_enviados", "cadastros_de_palestrante", "relatos_de_vaga"]) {
+      for (const linha of dados[lista]) assert.ok(!("user_id" in linha), `${lista} não deve ter user_id`);
+    }
+  });
+
+  test("nada de outra pessoa vaza na exportação", async () => {
+    const dados = (await ana(() => db.query("select public.exportar_meus_dados() d"))).rows[0].d;
+    const texto = JSON.stringify(dados);
+    assert.ok(!texto.includes("Vaga da Bia"), "vaga salva da Bia");
+    assert.ok(!texto.includes(BIA), "id da Bia");
+    assert.ok(!texto.includes("p1@x.com"), "e-mail da Bia (a Ana é p0)");
+    assert.equal(dados.cadastros_de_palestrante.length, 0, "o cadastro de palestrante é da Bia, não da Ana");
+    const daBia = (await como("authenticated", BIA, () => db.query("select public.exportar_meus_dados() d"))).rows[0].d;
+    assert.equal(daBia.cadastros_de_palestrante.length, 1);
+    assert.ok(!JSON.stringify(daBia).includes("Vaga da Ana"));
+  });
+
+  test("quem ainda não tem perfil nem envios recebe listas vazias, não erro", async () => {
+    const dados = (await como("authenticated", ELI, () => db.query("select public.exportar_meus_dados() d"))).rows[0].d;
+    assert.equal(dados.perfil, null);
+    assert.deepEqual(dados.vagas_salvas, []);
+    assert.deepEqual(dados.relatos_de_vaga, []);
+  });
+});

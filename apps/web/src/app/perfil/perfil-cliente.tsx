@@ -188,6 +188,19 @@ function ContaAcoes() {
   const conta = useConta();
   const [erro, setErro] = useState<string | null>(null);
 
+  async function baixar() {
+    setErro(null);
+    try {
+      const dados = await conta.exportarDados();
+      const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(arquivo);
+      link.download = `meus-dados-dse-academy-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (e) { console.error(e); setErro("Não foi possível baixar os seus dados agora. Tente de novo."); }
+  }
+
   async function excluir() {
     if (!confirm("Excluir sua conta e todos os seus dados? Essa ação não pode ser desfeita.")) return;
     try { await conta.excluirConta(); } catch (e) { console.error(e); setErro("Não foi possível excluir a conta agora. Tente de novo."); }
@@ -197,6 +210,7 @@ function ContaAcoes() {
     <div className="mt-10 border-t border-borda pt-6">
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <button type="button" onClick={() => void conta.sair()} className={estiloBotao("secundario")}>Sair</button>
+        <button type="button" onClick={() => void baixar()} className={estiloBotao("secundario")}>Baixar meus dados (JSON)</button>
         <button type="button" onClick={excluir} className={estiloBotao("perigo")}>Excluir minha conta e meus dados</button>
       </div>
       {erro && <p role="alert" className="mt-2 font-medium text-erro">{erro}</p>}

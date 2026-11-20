@@ -13,4 +13,6 @@ export interface ContaBackend {
   remover(usuario: Usuario, vagaId: string): Promise<void>;
   sair(): Promise<void>;
   excluirConta(): Promise<void>;
+  /** Tudo o que o portal guarda da pessoa, num objeto pronto para virar arquivo JSON (portabilidade, LGPD). */
+  exportarDados(): Promise<Record<string, unknown>>;
 }

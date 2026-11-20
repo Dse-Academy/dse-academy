@@ -39,6 +39,7 @@ export function criarBackendMemoria(): ContaBackend {
     },
     async remover(_u, vagaId) { const g = ler(); gravar({ ...g, salvas: g.salvas.filter((s) => s.vaga_id !== vagaId) }); },
     async sair() { gravar({ ...ler(), logada: false }); aviso?.(null); },
+    async exportarDados() { const g = ler(); return { exportado_em: new Date().toISOString(), perfil: g.perfil, vagas_salvas: g.salvas }; },
     async excluirConta() { gravar({ logada: false, perfil: null, salvas: [] }); aviso?.(null); },
   };
 }

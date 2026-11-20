@@ -1,5 +1,6 @@
 /** Regras do cadastro de palestrantes. Espelham os checks de supabase/migrations/004_palestrantes.sql. */
 
+import { VERSAO_POLITICA } from "./privacidade.ts";
 import { lista, normalizarLink } from "./texto.ts";
 
 export { lista, normalizarLink };
@@ -61,6 +62,8 @@ export type LinhaPalestrante = {
   links_anteriores: string[];
   aceite_lgpd: boolean;
   aceite_publicacao: boolean;
+  /** Versão da Política de Privacidade em vigor no momento do aceite (PRIV-03). */
+  versao_politica: string;
 };
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -104,5 +107,6 @@ export function paraLinha(c: CadastroPalestrante): LinhaPalestrante {
     links_anteriores: lista(c.linksAnteriores).map(normalizarLink),
     aceite_lgpd: c.aceiteLgpd,
     aceite_publicacao: c.aceitePublicacao,
+    versao_politica: VERSAO_POLITICA,
   };
 }
